@@ -71,6 +71,7 @@ MVP機能に加え、動画に対する詳細な情報管理（タグ付け、�
 * **開発環境**: **Docker / Docker Compose**
 * **外部API連携**: YouTube Data API, LLM API (OpenAI API / Google Gemini APIなど), (任意) 外部音声認識API
 * **（セマンティック検索向け）**: ベクトルデータベース (Pinecone / Weaviate / Qdrant など)
+* **パッケージ管理**: uv
 
 ---
 
