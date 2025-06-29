@@ -6,3 +6,4 @@ build/
 dist/
 .dockerignore
 *.log
+.vscode/
