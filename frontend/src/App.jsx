@@ -5,6 +5,23 @@ function App() {
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [items, setItems] = useState([])
 
+  // YouTube URLから動画IDを抽出するヘルパー関数
+  const extractVideoId = (url) => {
+    const patterns = [
+      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/,
+      /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^?]+)/,
+      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^?]+)/,
+      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([^?]+)/
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+    return null;
+  };
+
   // アイテムリストを取得
   const fetchItems = () => {
     fetch('/api/items/')
@@ -60,13 +77,27 @@ function App() {
         <p>No videos yet.</p>
       ) : (
         <ul>
-          {items.map((item) => (
-            <li key={item.id}>
-              <strong>Title:</strong> {item.title}<br />
-              <strong>Channel:</strong> {item.channel_name}<br />
-              <a href={item.url} target="_blank" rel="noopener noreferrer">{item.url}</a>
-            </li>
-          ))}
+          {items.map((item) => {
+            const videoId = extractVideoId(item.url);
+            return (
+              <li key={item.id}>
+                <strong>Title:</strong> {item.title}<br />
+                <strong>Channel:</strong> {item.channel_name}<br />
+                <a href={item.url} target="_blank" rel="noopener noreferrer">{item.url}</a><br />
+                {videoId && (
+                  <iframe
+                    width="560"
+                    height="315"
+                    src={`https://www.youtube.com/embed/${videoId}`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={item.title}
+                  ></iframe>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </>
