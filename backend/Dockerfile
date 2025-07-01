@@ -9,10 +9,10 @@ COPY . /app
 WORKDIR /app
 
 # 依存関係ファイルをコピーしてインストール
-RUN uv sync --locked
+RUN uv sync
 
 # 仮想環境を設定
 ENV PATH="/app/.venv/bin:$PATH"
 
 # FastAPIサーバーを起動
-CMD ["/bin/bash", "-c", "source .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
+CMD ["/bin/bash", "-c", "source .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000"]
