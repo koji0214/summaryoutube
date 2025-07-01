@@ -5,4 +5,5 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "psycopg2-binary",
+    "google-api-python-client>=2.174.0",
 ]
