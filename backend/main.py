@@ -2,31 +2,78 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import psycopg2
 import os
+import re
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 app = FastAPI()
 
 # Pydanticモデルの定義
 class Item(BaseModel):
-    name: str
+    url: str
 
 # データベース接続情報
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@db:5432/mydatabase")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
+def get_youtube_video_details(video_id: str):
+    if not YOUTUBE_API_KEY:
+        raise ValueError("YouTube API key is not set.")
+    
+    youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+    
+    try:
+        request = youtube.videos().list(
+            part="snippet",
+            id=video_id
+        )
+        response = request.execute()
+        
+        if not response.get("items"):
+            return None, None
+
+        video_snippet = response["items"][0]["snippet"]
+        title = video_snippet["title"]
+        channel_title = video_snippet["channelTitle"]
+        
+        return title, channel_title
+        
+    except HttpError as e:
+        print(f"An HTTP error {e.resp.status} occurred: {e.content}")
+        return None, None
+
+def extract_video_id(url: str):
+    # YouTubeのURLから動画IDを抽出する正規表現
+    patterns = [
+        r'(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)',
+        r'(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^?]+)',
+        r'(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^?]+)',
+        r'(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([^?]+)'
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
 @app.on_event("startup")
 async def startup_event():
-    # アプリケーション起動時にテーブルを作成
+    # アプリケーション起動時にテーブルを再作成
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
+        # 既存のテーブルを削除
         cur.execute("""
             CREATE TABLE IF NOT EXISTS items (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL
+                url TEXT NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                channel_name VARCHAR(255) NOT NULL
             );
         """)
         conn.commit()
@@ -44,15 +91,26 @@ def read_root():
 
 @app.post("/items/")
 def create_item(item: Item):
+    video_id = extract_video_id(item.url)
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
+    title, channel_name = get_youtube_video_details(video_id)
+    if not title or not channel_name:
+        raise HTTPException(status_code=500, detail="Could not retrieve video details from YouTube API.")
+
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("INSERT INTO items (name) VALUES (%s) RETURNING id;", (item.name,))
+        cur.execute(
+            "INSERT INTO items (url, title, channel_name) VALUES (%s, %s, %s) RETURNING id;",
+            (item.url, title, channel_name)
+        )
         item_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
-        return {"id": item_id, "name": item.name}
+        return {"id": item_id, "url": item.url, "title": title, "channel_name": channel_name}
     except Exception as e:
         print(f"Error inserting item: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
@@ -66,8 +124,8 @@ def read_items():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, name FROM items;")
-        items = [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
+        cur.execute("SELECT id, url, title, channel_name FROM items;")
+        items = [{"id": row[0], "url": row[1], "title": row[2], "channel_name": row[3]} for row in cur.fetchall()]
         cur.close()
         return items
     except Exception as e:
