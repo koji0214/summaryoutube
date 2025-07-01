@@ -124,7 +124,7 @@ def read_items():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, url, title, channel_name FROM items;")
+        cur.execute("SELECT id, url, title, channel_name FROM items ORDER BY id ASC;")
         items = [{"id": row[0], "url": row[1], "title": row[2], "channel_name": row[3]} for row in cur.fetchall()]
         cur.close()
         return items
