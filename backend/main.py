@@ -134,3 +134,54 @@ def read_items():
     finally:
         if conn:
             conn.close()
+
+@app.put("/items/{item_id}")
+def update_item(item_id: int, item: Item):
+    video_id = extract_video_id(item.url)
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
+    title, channel_name = get_youtube_video_details(video_id)
+    if not title or not channel_name:
+        raise HTTPException(status_code=500, detail="Could not retrieve video details from YouTube API.")
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE items SET url = %s, title = %s, channel_name = %s WHERE id = %s RETURNING id;",
+            (item.url, title, channel_name, item_id)
+        )
+        updated_id = cur.fetchone()
+        conn.commit()
+        cur.close()
+        if not updated_id:
+            raise HTTPException(status_code=404, detail="Item not found")
+        return {"id": item_id, "url": item.url, "title": title, "channel_name": channel_name}
+    except Exception as e:
+        print(f"Error updating item: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            conn.close()
+
+@app.delete("/items/{item_id}")
+def delete_item(item_id: int):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM items WHERE id = %s RETURNING id;", (item_id,))
+        deleted_id = cur.fetchone()
+        conn.commit()
+        cur.close()
+        if not deleted_id:
+            raise HTTPException(status_code=404, detail="Item not found")
+        return {"message": "Item deleted successfully"}
+    except Exception as e:
+        print(f"Error deleting item: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            conn.close()
