@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
-from src.models import Item
+from src.models import Video
 from src.database import create_tables
-from src.crud import create_item_db, get_items_db, update_item_db, delete_item_db
+from src.crud import create_video_db, get_videos_db, update_video_db, delete_video_db
 
 app = FastAPI()
 
@@ -13,18 +13,18 @@ async def startup_event():
 def read_root():
     return {"Hello": "World"}
 
-@app.post("/items/")
-def create_item(item: Item):
-    return create_item_db(item.url)
+@app.post("/videos/")
+def create_video(video: Video):
+    return create_video_db(video)
 
-@app.get("/items/")
-def read_items():
-    return get_items_db()
+@app.get("/videos/")
+def read_videos():
+    return get_videos_db()
 
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return update_item_db(item_id, item.url)
+@app.put("/videos/{video_id}")
+def update_video(video_id: int, video: Video):
+    return update_video_db(video_id, video)
 
-@app.delete("/items/{item_id}")
-def delete_item(item_id: int):
-    return delete_item_db(item_id)
+@app.delete("/videos/{video_id}")
+def delete_video(video_id: int):
+    return delete_video_db(video_id)
