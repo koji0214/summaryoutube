@@ -177,10 +177,18 @@ function App() {
               <li key={video.id}>
                 <strong>Title:</strong> {video.title}<br />
                 <strong>Channel:</strong> {video.channel_name}<br />
-                <a href={video.url} target="_blank" rel="noopener noreferrer">{video.url}</a><br />
 
                 {isEditing ? (
-                  <>
+                  <form onSubmit={(e) => handleUpdateSubmit(e, video.id)}>
+                    <strong>URL: </strong>
+                    <input
+                      type="text"
+                      name="url"
+                      value={currentEditData.url}
+                      onChange={handleEditFormChange}
+                      required
+                      style={{ width: '400px' }}
+                    /><br />
                     <strong>Tags: </strong>
                     <input
                       type="text"
@@ -198,11 +206,12 @@ function App() {
                       placeholder="Enter a memo"
                       style={{ width: '400px', height: '60px' }}
                     /><br />
-                    <button onClick={(e) => handleUpdateSubmit(e, video.id)}>Save</button>
+                    <button type="submit">Save</button>
                     <button type="button" onClick={handleCancelEdit}>Cancel</button>
-                  </>
+                  </form>
                 ) : (
                   <>
+                    <a href={video.url} target="_blank" rel="noopener noreferrer">{video.url}</a><br />
                     <strong>Tags:</strong> {video.tags || 'N/A'}<br />
                     <strong>Memo:</strong> {video.memo || 'N/A'}<br />
                     <button onClick={() => handleEditClick(video)}>Edit</button>
