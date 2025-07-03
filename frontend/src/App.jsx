@@ -177,47 +177,34 @@ function App() {
               <li key={video.id}>
                 <strong>Title:</strong> {video.title}<br />
                 <strong>Channel:</strong> {video.channel_name}<br />
-                <strong>Tags:</strong> {video.tags || 'N/A'}<br />
-                <strong>Memo:</strong> {video.memo || 'N/A'}<br />
+                <a href={video.url} target="_blank" rel="noopener noreferrer">{video.url}</a><br />
 
                 {isEditing ? (
-                  <form onSubmit={(e) => handleUpdateSubmit(e, video.id)}>
-                    <div>
-                      <label>URL: </label>
-                      <input
-                        type="text"
-                        name="url"
-                        value={currentEditData.url}
-                        onChange={handleEditFormChange}
-                        required
-                        style={{ width: '400px' }}
-                      />
-                    </div>
-                    <div>
-                      <label>Tags: </label>
-                      <input
-                        type="text"
-                        name="tags"
-                        value={currentEditData.tags}
-                        onChange={handleEditFormChange}
-                        style={{ width: '400px' }}
-                      />
-                    </div>
-                    <div>
-                      <label>Memo: </label>
-                      <textarea
-                        name="memo"
-                        value={currentEditData.memo}
-                        onChange={handleEditFormChange}
-                        style={{ width: '400px', height: '60px' }}
-                      />
-                    </div>
-                    <button type="submit">Update</button>
+                  <>
+                    <strong>Tags: </strong>
+                    <input
+                      type="text"
+                      name="tags"
+                      value={currentEditData.tags}
+                      onChange={handleEditFormChange}
+                      placeholder="Enter tags (comma-separated)"
+                      style={{ width: '400px' }}
+                    /><br />
+                    <strong>Memo: </strong>
+                    <textarea
+                      name="memo"
+                      value={currentEditData.memo}
+                      onChange={handleEditFormChange}
+                      placeholder="Enter a memo"
+                      style={{ width: '400px', height: '60px' }}
+                    /><br />
+                    <button onClick={(e) => handleUpdateSubmit(e, video.id)}>Save</button>
                     <button type="button" onClick={handleCancelEdit}>Cancel</button>
-                  </form>
+                  </>
                 ) : (
                   <>
-                    <a href={video.url} target="_blank" rel="noopener noreferrer">{video.url}</a><br />
+                    <strong>Tags:</strong> {video.tags || 'N/A'}<br />
+                    <strong>Memo:</strong> {video.memo || 'N/A'}<br />
                     <button onClick={() => handleEditClick(video)}>Edit</button>
                     <button onClick={() => handleDelete(video.id)}>Delete</button>
                   </>
