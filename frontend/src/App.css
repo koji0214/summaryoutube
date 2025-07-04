@@ -63,6 +63,12 @@
   align-items: center;
 }
 
+.tag-input-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .video-form label {
   display: block;
   margin-bottom: 0.5rem;

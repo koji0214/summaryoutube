@@ -59,7 +59,7 @@ const VideoForm = ({ onAddVideo, allTags, setAllTags }) => {
             </span>
           ))}
         </div>
-        <div style={{ marginTop: '5px' }}>
+        <div className="tag-input-controls" style={{ marginTop: '5px' }}>
           <select onChange={handleTagSelect} value="">
             <option value="" disabled>Select existing tag</option>
             {allTags.filter(t => !tags.includes(t)).map(tag => (
