@@ -66,7 +66,7 @@ const VideoItem = ({ video, allTags, setAllTags, onUpdateVideo, onDeleteVideo, o
             style={{ width: '400px' }}
           /><br />
           <strong>Tags: </strong>
-          <div className="tag-container-wrapper">
+          <div style={{ marginBottom: '1rem' }}>
             <div className="tag-container">
               {currentEditData.tags.map(tag => (
                 <span key={tag} className="tag-item">
