@@ -40,3 +40,228 @@
 .read-the-docs {
   color: #888;
 }
+
+.video-form {
+  display: block;
+  margin: 0 auto 2rem auto;
+  text-align: left;
+  padding: 1.5rem;
+  border: 1px solid #ccc; /* Light border for white background */
+  border-radius: 8px;
+  background-color: #ffffff; /* White background */
+  color: #333333; /* Dark gray for text */
+  width: fit-content;
+}
+
+.video-form div {
+  margin-bottom: 1rem;
+}
+
+.tag-input-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tag-input-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.video-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: #333333; /* Dark gray for labels */
+}
+
+.video-form input[type="text"],
+.video-form textarea,
+.video-form select {
+  background-color: #f0f0f0; /* Light gray background for input fields */
+  color: #333333; /* Dark gray text for input fields */
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.video-form input::placeholder,
+.video-form textarea::placeholder {
+  color: #666; /* Darker placeholder text */
+}
+
+.video-form button {
+  background-color: #007bff; /* Blue button */
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+
+.video-form button:hover {
+  background-color: #0056b3;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.video-form.hover-effect {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #2f2f2f;
+  padding: 3rem;
+  border-radius: 8px;
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+}
+
+.modal-close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: transparent;
+  color: #ccc; /* Light grey for the X */
+  border: 1px solid #666; /* Darker grey border */
+  border-radius: 4px; /* Changed from 0 to 4px for slightly rounded corners */
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.modal-close-button:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* Subtle background on hover */
+  color: #fff;
+  border-color: #fff;
+}
+
+.tag-container {
+  background-color: #f0f0f0; /* Light gray background for tag container */
+  border: 1px solid #ccc;
+}
+
+.video-list {
+  list-style: none;
+  padding: 0;
+}
+
+.video-item {
+  background-color: #2f2f2f; /* Slightly lighter than the body background */
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.video-item.editing {
+  background-color: #3a3a3a; /* A bit lighter for editing mode */
+  border-color: #9ecaed;
+  box-shadow: 0 0 10px rgba(158, 202, 237, 0.5);
+}
+
+.video-item strong {
+  color: #e0e0e0; /* Light gray for better contrast */
+}
+
+.video-item a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.video-item a:hover {
+  text-decoration: underline;
+}
+
+.video-item .actions {
+  margin-top: 1rem;
+}
+
+.video-item .actions button {
+  margin-right: 0.5rem;
+}
+
+
+.tag-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  width: 400px;
+  border: 1px solid #ccc;
+  padding: 5px;
+  border-radius: 4px;
+  background-color: white;
+}
+
+.tag-item {
+  background: #d0e1f9; /* 明るい青色 */
+  color: #333; /* 暗い灰色 */
+  padding: 3px 8px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.tag-item .tag-remove-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  margin-left: 5px;
+  color: #ff4d4d; /* 明るい赤色 */
+  font-weight: bold;
+  font-size: 12px; /* Smaller font size */
+  padding: 0 3px; /* Adjust padding to make it visually smaller */
+}
+
+.tag-item .tag-remove-button:hover {
+  color: #cc0000; /* 暗い赤色 */
+  background-color: rgba(255, 0, 0, 0.1); /* 薄い赤色の背景 */
+}
+
+.editing .tag-container-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.video-item input[type="text"],
+.video-item textarea,
+.video-item select {
+  background-color: #302f2f; /* Light gray background for input fields */
+  color: #dcdbdb; /* Dark gray text for input fields */
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 4px;
+}

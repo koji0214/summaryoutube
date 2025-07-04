@@ -1,182 +1,146 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import { useState, useEffect } from 'react';
+import './App.css';
+import VideoForm from './components/VideoForm';
+import VideoList from './components/VideoList';
 
 function App() {
-  const [youtubeUrl, setYoutubeUrl] = useState('') // For adding new videos
-  const [items, setItems] = useState([])
-  const [editingItemId, setEditingItemId] = useState(null) // ID of the item being edited
-  const [currentEditUrl, setCurrentEditUrl] = useState('') // URL for the inline edit input
+  const [videos, setVideos] = useState([]);
+  const [allTags, setAllTags] = useState([]);
+  const [editingVideoId, setEditingVideoId] = useState(null);
+  const [currentEditData, setCurrentEditData] = useState({ url: '', tags: [], memo: '' });
+  const [showModal, setShowModal] = useState(false); // State for modal visibility
 
-  // YouTube URLから動画IDを抽出するヘルパー関数
-  const extractVideoId = (url) => {
-    const patterns = [
-      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/,
-      /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^?]+)/,
-      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^?]+)/,
-      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([^?]+)/
-    ];
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match) {
-        return match[1];
-      }
-    }
-    return null;
+  const fetchVideos = () => {
+    fetch('/api/videos/')
+      .then((res) => res.json())
+      .then((data) => setVideos(data))
+      .catch((err) => console.error("Error fetching videos:", err));
   };
 
-  // アイテムリストを取得
-  const fetchItems = () => {
-    fetch('/api/items/')
+  const fetchTags = () => {
+    fetch('/api/tags/')
       .then((res) => res.json())
-      .then((data) => setItems(data))
-      .catch((err) => console.error("Error fetching items:", err))
-  }
+      .then((data) => setAllTags(data))
+      .catch((err) => console.error("Error fetching tags:", err));
+  };
 
   useEffect(() => {
-    fetchItems()
-  }, [])
+    fetchVideos();
+    fetchTags();
+  }, []);
 
-  // 新規アイテム追加フォームの送信処理
-  const handleAddSubmit = async (e) => {
-    e.preventDefault()
+  const handleAddVideo = async (videoData) => {
     try {
-      const response = await fetch('/api/items/', {
+      const response = await fetch('/api/videos/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: youtubeUrl }),
-      })
-      if (response.ok) {
-        setYoutubeUrl('') // フォームをクリア
-        fetchItems() // アイテムリストを再取得
-      } else {
-        console.error("Failed to add item")
-      }
-    } catch (error) {
-      console.error("Error adding item:", error)
-    }
-  }
-
-  // アイテムを削除
-  const handleDelete = async (id) => {
-    try {
-      const response = await fetch(`/api/items/${id}`, {
-        method: 'DELETE',
-      })
-      if (response.ok) {
-        fetchItems() // アイテムリストを再取得
-      } else {
-        console.error("Failed to delete item")
-      }
-    } catch (error) {
-      console.error("Error deleting item:", error)
-    }
-  }
-
-  // 編集ボタンクリック時の処理
-  const handleEditClick = (item) => {
-    setEditingItemId(item.id);
-    setCurrentEditUrl(item.url); // フォームに現在のURLをセット
-  };
-
-  // インライン編集フォームの更新処理
-  const handleUpdateSubmit = async (e, itemId) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`/api/items/${itemId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: currentEditUrl }),
+        body: JSON.stringify(videoData),
       });
       if (response.ok) {
-        setEditingItemId(null); // 編集モードを終了
-        setCurrentEditUrl(''); // フォームをクリア
-        fetchItems(); // アイテムリストを再取得
+        fetchVideos();
+        fetchTags();
+        setShowModal(false); // Close modal on successful add
       } else {
-        console.error("Failed to update item");
+        console.error("Failed to add video");
       }
     } catch (error) {
-      console.error("Error updating item:", error);
+      console.error("Error adding video:", error);
     }
   };
 
-  // インライン編集のキャンセル処理
+  const handleUpdateVideo = async (videoId, videoData) => {
+    try {
+      const response = await fetch(`/api/videos/${videoId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(videoData),
+        }
+      );
+      if (response.ok) {
+        setEditingVideoId(null);
+        setCurrentEditData({ url: '', tags: [], memo: '' });
+        fetchVideos();
+        fetchTags();
+      } else {
+        console.error("Failed to update video");
+      }
+    } catch (error) {
+      console.error("Error updating video:", error);
+    }
+  };
+
+  const handleDeleteVideo = async (id) => {
+    try {
+      const response = await fetch(`/api/videos/${id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        fetchVideos();
+        fetchTags();
+      } else {
+        console.error("Failed to delete video");
+      }
+    } catch (error) {
+      console.error("Error deleting video:", error);
+    }
+  };
+
+  const handleEditVideo = (video) => {
+    setEditingVideoId(video.id);
+    setCurrentEditData({
+      url: video.url,
+      tags: video.tags ? video.tags.split(',').map(t => t.trim()) : [],
+      memo: video.memo || ''
+    });
+  };
+
   const handleCancelEdit = () => {
-    setEditingItemId(null);
-    setCurrentEditUrl('');
+    setEditingVideoId(null);
+    setCurrentEditData({ url: '', tags: [], memo: '' });
+  };
+
+  const handleEditFormChange = (data) => {
+    setCurrentEditData(data);
   };
 
   return (
     <>
       <h1>YouTube Video List</h1>
+      <button onClick={() => setShowModal(true)}>Add New Video</button>
 
-      <h2>Add New Video</h2>
-      <form onSubmit={handleAddSubmit}>
-        <input
-          type="text"
-          value={youtubeUrl}
-          onChange={(e) => setYoutubeUrl(e.target.value)}
-          placeholder="Enter YouTube URL"
-          required
-        />
-        <button type="submit">Add Video</button>
-      </form>
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="modal-close-button" onClick={() => setShowModal(false)}>X</button>
+            <VideoForm onAddVideo={handleAddVideo} allTags={allTags} setAllTags={setAllTags} onCancel={() => setShowModal(false)} />
+          </div>
+        </div>
+      )}
 
       <h2>Videos from Database</h2>
-      {items.length === 0 ? (
+      {videos.length === 0 ? (
         <p>No videos yet.</p>
       ) : (
-        <ul>
-          {items.map((item) => {
-            const videoId = extractVideoId(item.url);
-            const isEditing = editingItemId === item.id;
-
-            return (
-              <li key={item.id}>
-                <strong>Title:</strong> {item.title}<br />
-                <strong>Channel:</strong> {item.channel_name}<br />
-                {isEditing ? (
-                  <form onSubmit={(e) => handleUpdateSubmit(e, item.id)} style={{ display: 'inline' }}>
-                    <input
-                      type="text"
-                      value={currentEditUrl}
-                      onChange={(e) => setCurrentEditUrl(e.target.value)}
-                      placeholder="Enter new YouTube URL"
-                      required
-                      style={{ width: '400px' }}
-                    />
-                    <button type="submit">Update</button>
-                    <button type="button" onClick={handleCancelEdit}>Cancel</button>
-                  </form>
-                ) : (
-                  <>
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">{item.url}</a><br />
-                    <button onClick={() => handleEditClick(item)}>Edit</button>
-                    <button onClick={() => handleDelete(item.id)}>Delete</button>
-                  </>
-                )}
-                <br />
-                {videoId && (
-                  <iframe
-                    width="560"
-                    height="315"
-                    src={`https://www.youtube.com/embed/${videoId}`}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title={item.title}
-                  ></iframe>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <VideoList
+          videos={videos}
+          allTags={allTags}
+          setAllTags={setAllTags}
+          onUpdateVideo={handleUpdateVideo}
+          onDeleteVideo={handleDeleteVideo}
+          onEditVideo={handleEditVideo}
+          editingVideoId={editingVideoId}
+          currentEditData={currentEditData}
+          onCancelEdit={handleCancelEdit}
+          onEditFormChange={handleEditFormChange}
+        />
       )}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
