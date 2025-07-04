@@ -46,9 +46,11 @@
   margin: 0 auto 2rem auto;
   text-align: left;
   padding: 1.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc; /* Light border for white background */
   border-radius: 8px;
-  background-color: #f9f9f9;
+  background-color: #ffffff; /* White background */
+  color: #333333; /* Dark gray for text */
+  width: fit-content;
 }
 
 .video-form div {
@@ -65,7 +67,41 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: bold;
-  color: #333;
+  color: #333333; /* Dark gray for labels */
+}
+
+.video-form input[type="text"],
+.video-form textarea,
+.video-form select {
+  background-color: #f0f0f0; /* Light gray background for input fields */
+  color: #333333; /* Dark gray text for input fields */
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.video-form input::placeholder,
+.video-form textarea::placeholder {
+  color: #666; /* Darker placeholder text */
+}
+
+.video-form button {
+  background-color: #007bff; /* Blue button */
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+
+.video-form button:hover {
+  background-color: #0056b3;
+}
+
+.tag-container {
+  background-color: #f0f0f0; /* Light gray background for tag container */
+  border: 1px solid #ccc;
 }
 
 .video-list {
