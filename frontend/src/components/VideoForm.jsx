@@ -70,10 +70,16 @@ const VideoForm = ({ onAddVideo, allTags, setAllTags }) => {
             type="text"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                handleAddNewTag();
+                setNewTag(''); // Always clear the input after Enter is pressed
+              }
+            }}
             placeholder="Or add a new tag"
             style={{ marginLeft: '10px' }}
           />
-          <button type="button" onClick={handleAddNewTag}>Add Tag</button>
         </div>
       </div>
       <div>
