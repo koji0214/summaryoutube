@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 
-const VideoForm = ({ onAddVideo, allTags, setAllTags }) => {
+const VideoForm = ({ onAddVideo, allTags, setAllTags, onCancel }) => {
   const [url, setUrl] = useState('');
   const [tags, setTags] = useState([]);
   const [memo, setMemo] = useState('');
   const [newTag, setNewTag] = useState('');
+  const [isHovering, setIsHovering] = useState(false);
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
+    setIsHovering(true);
+    setTimeout(() => setIsHovering(false), 500); // Remove hover effect after 0.5 seconds
     await onAddVideo({ url, tags: tags.join(','), memo });
     setUrl('');
     setTags([]);
@@ -36,7 +39,7 @@ const VideoForm = ({ onAddVideo, allTags, setAllTags }) => {
   };
 
   return (
-    <form onSubmit={handleAddSubmit} className="video-form">
+    <form onSubmit={handleAddSubmit} className={`video-form ${isHovering ? 'hover-effect' : ''}`}>
       <h2>Add New Video</h2>
       <div>
         <label>YouTube URL:</label>
@@ -91,7 +94,10 @@ const VideoForm = ({ onAddVideo, allTags, setAllTags }) => {
           style={{ width: '400px', height: '80px' }}
         />
       </div>
-      <button type="submit">Add Video</button>
+      <div className="form-actions">
+        <button type="submit">Add Video</button>
+        {onCancel && <button type="button" onClick={onCancel} style={{ marginLeft: '10px' }}>Cancel</button>}
+      </div>
     </form>
   );
 };

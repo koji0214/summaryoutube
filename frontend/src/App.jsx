@@ -8,6 +8,7 @@ function App() {
   const [allTags, setAllTags] = useState([]);
   const [editingVideoId, setEditingVideoId] = useState(null);
   const [currentEditData, setCurrentEditData] = useState({ url: '', tags: [], memo: '' });
+  const [showModal, setShowModal] = useState(false); // State for modal visibility
 
   const fetchVideos = () => {
     fetch('/api/videos/')
@@ -40,6 +41,7 @@ function App() {
       if (response.ok) {
         fetchVideos();
         fetchTags();
+        setShowModal(false); // Close modal on successful add
       } else {
         console.error("Failed to add video");
       }
@@ -109,7 +111,17 @@ function App() {
   return (
     <>
       <h1>YouTube Video List</h1>
-      <VideoForm onAddVideo={handleAddVideo} allTags={allTags} setAllTags={setAllTags} />
+      <button onClick={() => setShowModal(true)}>Add New Video</button>
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="modal-close-button" onClick={() => setShowModal(false)}>X</button>
+            <VideoForm onAddVideo={handleAddVideo} allTags={allTags} setAllTags={setAllTags} onCancel={() => setShowModal(false)} />
+          </div>
+        </div>
+      )}
+
       <h2>Videos from Database</h2>
       {videos.length === 0 ? (
         <p>No videos yet.</p>
