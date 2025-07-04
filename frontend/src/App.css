@@ -40,3 +40,38 @@
 .read-the-docs {
   color: #888;
 }
+
+.tag-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  width: 400px;
+  border: 1px solid #ccc;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.tag-item {
+  background: #d0e1f9; /* 明るい青色 */
+  color: #333; /* 暗い灰色 */
+  padding: 3px 8px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.tag-remove-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  margin-left: 5px;
+  color: #ff4d4d; /* 明るい赤色 */
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.tag-remove-button:hover {
+  color: #cc0000; /* 暗い赤色 */
+}

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from src.models import Video
 from src.database import create_tables
-from src.crud import create_video_db, get_videos_db, update_video_db, delete_video_db
+from src.crud import create_video_db, get_videos_db, update_video_db, delete_video_db, get_all_tags_db
 
 app = FastAPI()
 
@@ -20,6 +20,10 @@ def create_video(video: Video):
 @app.get("/videos/")
 def read_videos():
     return get_videos_db()
+
+@app.get("/tags/")
+def read_tags():
+    return get_all_tags_db()
 
 @app.put("/videos/{video_id}")
 def update_video(video_id: int, video: Video):

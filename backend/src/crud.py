@@ -95,3 +95,27 @@ def delete_video_db(video_id: int):
     finally:
         if conn:
             conn.close()
+
+def get_all_tags_db():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT tags FROM videos;")
+        all_tags = []
+        rows = cur.fetchall()
+        for row in rows:
+            if row[0]:
+                all_tags.extend([tag.strip() for tag in row[0].split(',')])
+        
+        # Remove duplicates and sort
+        unique_tags = sorted(list(set(all_tags)))
+        
+        cur.close()
+        return unique_tags
+    except Exception as e:
+        print(f"Error fetching tags: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            conn.close()

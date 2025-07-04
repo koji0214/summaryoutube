@@ -4,11 +4,14 @@ import './App.css'
 function App() {
   // State for the "Add New Video" form
   const [url, setUrl] = useState('');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState([]);
   const [memo, setMemo] = useState('');
+  const [newTag, setNewTag] = useState('');
+
 
   // State for the list of videos
   const [videos, setVideos] = useState([]);
+  const [allTags, setAllTags] = useState([]);
 
   // State for inline editing
   const [editingVideoId, setEditingVideoId] = useState(null);
@@ -39,8 +42,16 @@ function App() {
       .catch((err) => console.error("Error fetching videos:", err));
   };
 
+  const fetchTags = () => {
+    fetch('/api/tags/')
+      .then((res) => res.json())
+      .then((data) => setAllTags(data))
+      .catch((err) => console.error("Error fetching tags:", err));
+  };
+
   useEffect(() => {
     fetchVideos();
+    fetchTags();
   }, []);
 
   // Handle submission of the "Add New Video" form
@@ -52,13 +63,14 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url, tags, memo }),
+        body: JSON.stringify({ url, tags: tags.join(','), memo }),
       });
       if (response.ok) {
         setUrl('');
-        setTags('');
+        setTags([]);
         setMemo('');
         fetchVideos();
+        fetchTags();
       } else {
         console.error("Failed to add video");
       }
@@ -75,6 +87,7 @@ function App() {
       });
       if (response.ok) {
         fetchVideos();
+        fetchTags();
       } else {
         console.error("Failed to delete video");
       }
@@ -86,7 +99,11 @@ function App() {
   // Handle clicking the "Edit" button
   const handleEditClick = (video) => {
     setEditingVideoId(video.id);
-    setCurrentEditData({ url: video.url, tags: video.tags || '', memo: video.memo || '' });
+    setCurrentEditData({
+      url: video.url,
+      tags: video.tags ? video.tags.split(',').map(t => t.trim()) : [],
+      memo: video.memo || ''
+    });
   };
 
   // Handle submission of the inline edit form
@@ -98,12 +115,13 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(currentEditData),
+        body: JSON.stringify({ ...currentEditData, tags: currentEditData.tags.join(',') }),
       });
       if (response.ok) {
         setEditingVideoId(null);
         setCurrentEditData({ url: '', tags: '', memo: '' });
         fetchVideos();
+        fetchTags();
       } else {
         console.error("Failed to update video");
       }
@@ -122,6 +140,55 @@ function App() {
   const handleEditFormChange = (e) => {
     const { name, value } = e.target;
     setCurrentEditData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleTagSelect = (e) => {
+    const selectedTag = e.target.value;
+    if (selectedTag && !tags.includes(selectedTag)) {
+      setTags([...tags, selectedTag]);
+    }
+  };
+
+  const handleAddNewTag = () => {
+    if (newTag && !tags.includes(newTag)) {
+      setTags([...tags, newTag]);
+      if (!allTags.includes(newTag)) {
+        setAllTags([...allTags, newTag]);
+      }
+      setNewTag('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleEditTagSelect = (e) => {
+    const selectedTag = e.target.value;
+    if (selectedTag && !currentEditData.tags.includes(selectedTag)) {
+      setCurrentEditData(prev => ({ ...prev, tags: [...prev.tags, selectedTag] }));
+    }
+  };
+
+  const handleEditAddNewTag = (e) => {
+    const newTagValue = e.target.value;
+    if (e.key === 'Enter' && newTagValue) {
+      e.preventDefault();
+      if (!currentEditData.tags.includes(newTagValue)) {
+        setCurrentEditData(prev => ({ ...prev, tags: [...prev.tags, newTagValue] }));
+        if (!allTags.includes(newTagValue)) {
+          setAllTags([...allTags, newTagValue]);
+        }
+      }
+      e.target.value = '';
+    }
+  };
+
+  const handleEditRemoveTag = (tagToRemove) => {
+    setCurrentEditData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
   };
 
 
@@ -144,13 +211,30 @@ function App() {
         </div>
         <div>
           <label>Tags: </label>
-          <input
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="Enter tags (comma-separated)"
-            style={{ width: '400px' }}
-          />
+          <div className="tag-container">
+            {tags.map(tag => (
+              <span key={tag} className="tag-item">
+                {tag}
+                <button type="button" onClick={() => handleRemoveTag(tag)} className="tag-remove-button">x</button>
+              </span>
+            ))}
+          </div>
+          <div style={{ marginTop: '5px' }}>
+            <select onChange={handleTagSelect} value="">
+              <option value="" disabled>Select existing tag</option>
+              {allTags.filter(t => !tags.includes(t)).map(tag => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              placeholder="Or add a new tag"
+              style={{ marginLeft: '10px' }}
+            />
+            <button type="button" onClick={handleAddNewTag}>Add Tag</button>
+          </div>
         </div>
         <div>
           <label>Memo: </label>
@@ -190,14 +274,30 @@ function App() {
                       style={{ width: '400px' }}
                     /><br />
                     <strong>Tags: </strong>
-                    <input
-                      type="text"
-                      name="tags"
-                      value={currentEditData.tags}
-                      onChange={handleEditFormChange}
-                      placeholder="Enter tags (comma-separated)"
-                      style={{ width: '400px' }}
-                    /><br />
+                    <div>
+                      <div className="tag-container">
+                        {currentEditData.tags.map(tag => (
+                          <span key={tag} className="tag-item">
+                            {tag}
+                            <button type="button" onClick={() => handleEditRemoveTag(tag)} className="tag-remove-button">x</button>
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: '5px' }}>
+                        <select onChange={handleEditTagSelect} value="">
+                          <option value="" disabled>Select existing tag</option>
+                          {allTags.filter(t => !currentEditData.tags.includes(t)).map(tag => (
+                            <option key={tag} value={tag}>{tag}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Add new tag and press Enter"
+                          onKeyDown={handleEditAddNewTag}
+                          style={{ marginLeft: '10px' }}
+                        />
+                      </div>
+                    </div>
                     <strong>Memo: </strong>
                     <textarea
                       name="memo"
