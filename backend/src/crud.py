@@ -48,34 +48,53 @@ def get_videos_db():
             conn.close()
 
 def update_video_db(video_id: int, video: Video):
-    video_id_extracted = extract_video_id(video.url)
-    if not video_id_extracted:
-        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-    title, channel_name = get_youtube_video_details(video_id_extracted)
-    if not title or not channel_name:
-        raise HTTPException(status_code=500, detail="Could not retrieve video details from YouTube API.")
+    # 現在の動画情報を取得
+    cur.execute("SELECT url, title, channel_name FROM videos WHERE id = %s;", (video_id,))
+    current_video = cur.fetchone()
+    if not current_video:
+        cur.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="Video not found")
 
-    conn = None
+    current_url, current_title, current_channel_name = current_video
+
+    # URLが変更されたか確認
+    if video.url != current_url:
+        video_id_extracted = extract_video_id(video.url)
+        if not video_id_extracted:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
+        title, channel_name = get_youtube_video_details(video_id_extracted)
+        if not title or not channel_name:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=500, detail="Could not retrieve video details from YouTube API.")
+    else:
+        # URLが変更されていない場合は、既存のタイトルとチャンネル名を使用
+        title, channel_name = current_title, current_channel_name
+
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
         cur.execute(
             "UPDATE videos SET url = %s, title = %s, channel_name = %s, tags = %s, memo = %s WHERE id = %s RETURNING id;",
             (video.url, title, channel_name, video.tags, video.memo, video_id)
         )
         updated_id = cur.fetchone()
         conn.commit()
-        cur.close()
         if not updated_id:
             raise HTTPException(status_code=404, detail="Video not found")
         return {"id": video_id, "url": video.url, "title": title, "channel_name": channel_name, "tags": video.tags, "memo": video.memo}
     except Exception as e:
+        conn.rollback()
         print(f"Error updating video: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
-        if conn:
-            conn.close()
+        cur.close()
+        conn.close()
 
 def delete_video_db(video_id: int):
     conn = None
