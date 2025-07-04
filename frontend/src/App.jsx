@@ -197,7 +197,7 @@ function App() {
       <h1>YouTube Video List</h1>
 
       <h2>Add New Video</h2>
-      <form onSubmit={handleAddSubmit}>
+      <form onSubmit={handleAddSubmit} className="video-form">
         <div>
           <label>YouTube URL: </label>
           <input
@@ -252,13 +252,13 @@ function App() {
       {videos.length === 0 ? (
         <p>No videos yet.</p>
       ) : (
-        <ul>
+        <ul className="video-list">
           {videos.map((video) => {
             const videoId = extractVideoId(video.url);
             const isEditing = editingVideoId === video.id;
 
             return (
-              <li key={video.id}>
+              <li key={video.id} className={`video-item ${isEditing ? 'editing' : ''}`}>
                 <strong>Title:</strong> {video.title}<br />
                 <strong>Channel:</strong> {video.channel_name}<br />
 
@@ -274,7 +274,7 @@ function App() {
                       style={{ width: '400px' }}
                     /><br />
                     <strong>Tags: </strong>
-                    <div>
+                    <div class="tag-container-wrapper">
                       <div className="tag-container">
                         {currentEditData.tags.map(tag => (
                           <span key={tag} className="tag-item">
@@ -306,16 +306,20 @@ function App() {
                       placeholder="Enter a memo"
                       style={{ width: '400px', height: '60px' }}
                     /><br />
-                    <button type="submit">Save</button>
-                    <button type="button" onClick={handleCancelEdit}>Cancel</button>
+                    <div className="actions">
+                      <button type="submit">Save</button>
+                      <button type="button" onClick={handleCancelEdit}>Cancel</button>
+                    </div>
                   </form>
                 ) : (
                   <>
                     <a href={video.url} target="_blank" rel="noopener noreferrer">{video.url}</a><br />
                     <strong>Tags:</strong> {video.tags || 'N/A'}<br />
                     <strong>Memo:</strong> {video.memo || 'N/A'}<br />
-                    <button onClick={() => handleEditClick(video)}>Edit</button>
-                    <button onClick={() => handleDelete(video.id)}>Delete</button>
+                    <div className="actions">
+                      <button onClick={() => handleEditClick(video)}>Edit</button>
+                      <button onClick={() => handleDelete(video.id)}>Delete</button>
+                    </div>
                   </>
                 )}
                 <br />
