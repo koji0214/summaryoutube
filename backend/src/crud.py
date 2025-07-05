@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from src.database import get_db_connection
 from src.youtube_api import extract_video_id, get_youtube_video_details
 from src.models import Video
+from typing import Optional
 
 def create_video_db(video: Video):
     video_id = extract_video_id(video.url)
@@ -42,6 +43,43 @@ def get_videos_db():
         return videos
     except Exception as e:
         print(f"Error fetching videos: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            conn.close()
+
+def search_videos_db(title_query: Optional[str] = None, tags_query: Optional[str] = None):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        sql_query = "SELECT id, url, title, channel_name, tags, memo FROM videos"
+        conditions = []
+        params = []
+
+        if title_query:
+            conditions.append("title ILIKE %s")
+            params.append(f"%{title_query}%")
+        
+        if tags_query:
+            # tags_queryはカンマ区切りの文字列を想定
+            # 例: "tag1,tag2" -> ['tag1', 'tag2']
+            # PostgreSQLのstring_to_array関数と@>演算子を使って、tagsカラムに指定された全てのタグが含まれているかをチェック
+            conditions.append("string_to_array(tags, ',') @> string_to_array(%s, ',')")
+            params.append(tags_query)
+
+        if conditions:
+            sql_query += " WHERE " + " AND ".join(conditions)
+        
+        sql_query += " ORDER BY id ASC;"
+
+        cur.execute(sql_query, tuple(params))
+        videos = [{"id": row[0], "url": row[1], "title": row[2], "channel_name": row[3], "tags": row[4], "memo": row[5]} for row in cur.fetchall()]
+        cur.close()
+        return videos
+    except Exception as e:
+        print(f"Error searching videos: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:

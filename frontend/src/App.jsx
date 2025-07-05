@@ -9,9 +9,18 @@ function App() {
   const [editingVideoId, setEditingVideoId] = useState(null);
   const [currentEditData, setCurrentEditData] = useState({ url: '', tags: [], memo: '' });
   const [showModal, setShowModal] = useState(false); // State for modal visibility
+  const [searchTitle, setSearchTitle] = useState('');
+  const [searchTags, setSearchTags] = useState([]);
 
-  const fetchVideos = () => {
-    fetch('/api/videos/')
+  const fetchVideos = (title = searchTitle, tags = searchTags) => {
+    const params = new URLSearchParams();
+    if (title) {
+      params.append('title_query', title);
+    }
+    if (tags.length > 0) {
+      params.append('tags_query', tags.join(','));
+    }
+    fetch(`/api/videos/?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => setVideos(data))
       .catch((err) => console.error("Error fetching videos:", err));
@@ -27,7 +36,7 @@ function App() {
   useEffect(() => {
     fetchVideos();
     fetchTags();
-  }, []);
+  }, [searchTitle, searchTags]);
 
   const handleAddVideo = async (videoData) => {
     try {
@@ -108,6 +117,10 @@ function App() {
     setCurrentEditData(data);
   };
 
+  const handleSearch = () => {
+    fetchVideos(searchTitle, searchTags);
+  };
+
   return (
     <>
       <h1>YouTube Video List</h1>
@@ -121,6 +134,39 @@ function App() {
           </div>
         </div>
       )}
+
+      <h2>Search Videos</h2>
+      <div className="search-controls">
+        <input
+          type="text"
+          placeholder="Search by title"
+          value={searchTitle}
+          onChange={(e) => setSearchTitle(e.target.value)}
+        />
+        <select
+          multiple
+          value={searchTags}
+          onChange={(e) =>
+            setSearchTags(
+              Array.from(e.target.options)
+                .filter((option) => option.selected)
+                .map((option) => option.value)
+            )
+          }
+        >
+          {allTags.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
+            </option>
+          ))}
+        </select>
+        <button onClick={handleSearch}>Search</button>
+        <button onClick={() => {
+          setSearchTitle('');
+          setSearchTags([]);
+          fetchVideos('', []);
+        }}>Clear Search</button>
+      </div>
 
       <h2>Videos from Database</h2>
       {videos.length === 0 ? (
