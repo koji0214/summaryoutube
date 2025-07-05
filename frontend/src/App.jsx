@@ -12,8 +12,10 @@ function App() {
   const [showModal, setShowModal] = useState(false); // State for modal visibility
   const [searchTitle, setSearchTitle] = useState('');
   const [searchTags, setSearchTags] = useState([]);
+  const [sortBy, setSortBy] = useState('id');
+  const [sortOrder, setSortOrder] = useState('asc');
 
-  const fetchVideos = (title = searchTitle, tags = searchTags) => {
+  const fetchVideos = (title = searchTitle, tags = searchTags, sort_by = sortBy, sort_order = sortOrder) => {
     const params = new URLSearchParams();
     if (title) {
       params.append('title_query', title);
@@ -21,6 +23,8 @@ function App() {
     if (tags.length > 0) {
       params.append('tags_query', tags.join(','));
     }
+    params.append('sort_by', sort_by);
+    params.append('sort_order', sort_order);
     fetch(`/api/videos/?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => setVideos(data))
@@ -119,7 +123,7 @@ function App() {
   };
 
   const handleSearch = () => {
-    fetchVideos(searchTitle, searchTags);
+    fetchVideos(searchTitle, searchTags, sortBy, sortOrder);
   };
 
   return (
@@ -149,11 +153,24 @@ function App() {
           selectedTags={searchTags}
           onTagChange={setSearchTags}
         />
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="id">Sort by ID</option>
+          <option value="title">Sort by Title</option>
+          <option value="channel_name">Sort by Channel</option>
+          <option value="created_at">Sort by Created Date</option>
+          <option value="updated_at">Sort by Updated Date</option>
+        </select>
+        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
         <button onClick={handleSearch}>Search</button>
         <button onClick={() => {
           setSearchTitle('');
           setSearchTags([]);
-          fetchVideos('', []);
+          setSortBy('id');
+          setSortOrder('asc');
+          fetchVideos('', [], 'id', 'asc');
         }}>Clear Search</button>
       </div>
 

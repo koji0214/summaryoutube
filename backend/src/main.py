@@ -19,10 +19,8 @@ def create_video(video: Video):
     return create_video_db(video)
 
 @app.get("/videos/")
-def read_videos(title_query: Optional[str] = None, tags_query: Optional[str] = None):
-    if title_query or tags_query:
-        return search_videos_db(title_query, tags_query)
-    return get_videos_db()
+def read_videos(title_query: Optional[str] = None, tags_query: Optional[str] = None, sort_by: str = "id", sort_order: str = "asc"):
+    return search_videos_db(title_query, tags_query, sort_by, sort_order)
 
 @app.get("/tags/")
 def read_tags():

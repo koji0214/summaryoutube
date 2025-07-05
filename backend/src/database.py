@@ -19,7 +19,9 @@ async def create_tables():
                 title VARCHAR(255) NOT NULL,
                 channel_name VARCHAR(255) NOT NULL,
                 tags TEXT,
-                memo TEXT
+                memo TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         """)
         conn.commit()
