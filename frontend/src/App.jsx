@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import VideoForm from './components/VideoForm';
 import VideoList from './components/VideoList';
+import TagMultiSelect from './components/TagMultiSelect';
 
 function App() {
   const [videos, setVideos] = useState([]);
@@ -34,9 +35,9 @@ function App() {
   };
 
   useEffect(() => {
-    fetchVideos();
+    fetchVideos(); // Initial fetch without search parameters
     fetchTags();
-  }, [searchTitle, searchTags]);
+  }, []);
 
   const handleAddVideo = async (videoData) => {
     try {
@@ -143,23 +144,11 @@ function App() {
           value={searchTitle}
           onChange={(e) => setSearchTitle(e.target.value)}
         />
-        <select
-          multiple
-          value={searchTags}
-          onChange={(e) =>
-            setSearchTags(
-              Array.from(e.target.options)
-                .filter((option) => option.selected)
-                .map((option) => option.value)
-            )
-          }
-        >
-          {allTags.map((tag) => (
-            <option key={tag} value={tag}>
-              {tag}
-            </option>
-          ))}
-        </select>
+        <TagMultiSelect
+          allTags={allTags}
+          selectedTags={searchTags}
+          onTagChange={setSearchTags}
+        />
         <button onClick={handleSearch}>Search</button>
         <button onClick={() => {
           setSearchTitle('');
