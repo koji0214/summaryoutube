@@ -281,6 +281,7 @@
   border-radius: 4px;
   background-color: #f0f0f0;
   color: #333;
+  box-sizing: border-box;
 }
 
 .search-controls button {
@@ -310,18 +311,18 @@
   background-color: #f0f0f0;
   color: #333;
   cursor: pointer;
-  min-height: 38px; /* To match input height */
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .selected-tag-pill {
-  background-color: #007bff;
-  color: white;
-  padding: 3px 8px;
-  border-radius: 12px;
+  background-color: #cececf;
+  color: rgb(31, 31, 31);
+  padding: 1px 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -330,10 +331,15 @@
 .selected-tag-pill button {
   background: none;
   border: none;
-  color: white;
+  color: rgb(63, 62, 62);
   font-weight: bold;
   cursor: pointer;
   padding: 0 3px;
+}
+
+.selected-tag-pill button:hover {
+  background-color: #636464; /* Darker blue, similar to tag background */
+  border-radius: 10%; /* Make it round on hover */
 }
 
 .tag-dropdown {
