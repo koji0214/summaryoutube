@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from src.database import get_db_connection
 from src.youtube_api import extract_video_id, get_youtube_video_details
 from src.models import Video
+from typing import Optional
 
 def create_video_db(video: Video):
     video_id = extract_video_id(video.url)
@@ -17,13 +18,16 @@ def create_video_db(video: Video):
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO videos (url, title, channel_name, tags, memo) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
+            "INSERT INTO videos (url, title, channel_name, tags, memo) VALUES (%s, %s, %s, %s, %s) RETURNING id, created_at, updated_at;",
             (video.url, title, channel_name, video.tags, video.memo)
         )
-        video_id = cur.fetchone()[0]
+        result = cur.fetchone()
+        video_id = result[0]
+        created_at = result[1]
+        updated_at = result[2]
         conn.commit()
         cur.close()
-        return {"id": video_id, "url": video.url, "title": title, "channel_name": channel_name, "tags": video.tags, "memo": video.memo}
+        return {"id": video_id, "url": video.url, "title": title, "channel_name": channel_name, "tags": video.tags, "memo": video.memo, "created_at": created_at, "updated_at": updated_at}
     except Exception as e:
         print(f"Error inserting video: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
@@ -36,12 +40,55 @@ def get_videos_db():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, url, title, channel_name, tags, memo FROM videos ORDER BY id ASC;")
-        videos = [{"id": row[0], "url": row[1], "title": row[2], "channel_name": row[3], "tags": row[4], "memo": row[5]} for row in cur.fetchall()]
+        cur.execute("SELECT id, url, title, channel_name, tags, memo, created_at, updated_at FROM videos ORDER BY id ASC;")
+        videos = [{"id": row[0], "url": row[1], "title": row[2], "channel_name": row[3], "tags": row[4], "memo": row[5], "created_at": row[6], "updated_at": row[7]} for row in cur.fetchall()]
         cur.close()
         return videos
     except Exception as e:
         print(f"Error fetching videos: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            conn.close()
+
+def search_videos_db(title_query: Optional[str] = None, tags_query: Optional[str] = None, sort_by: str = "id", sort_order: str = "asc"):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        sql_query = "SELECT id, url, title, channel_name, tags, memo, created_at, updated_at FROM videos"
+        conditions = []
+        params = []
+
+        if title_query:
+            conditions.append("title ILIKE %s")
+            params.append(f"%{title_query}%")
+        
+        if tags_query:
+            conditions.append("string_to_array(tags, ',') @> string_to_array(%s, ',')")
+            params.append(tags_query)
+
+        if conditions:
+            sql_query += " WHERE " + " AND ".join(conditions)
+        
+        # Sorting
+        valid_sort_columns = {"id", "title", "channel_name", "created_at", "updated_at"}
+        if sort_by not in valid_sort_columns:
+            sort_by = "id" # Default to id if invalid column is provided
+        
+        sort_order = sort_order.upper()
+        if sort_order not in {"ASC", "DESC"}:
+            sort_order = "ASC" # Default to ASC if invalid order is provided
+
+        sql_query += f" ORDER BY {sort_by} {sort_order};"
+
+        cur.execute(sql_query, tuple(params))
+        videos = [{"id": row[0], "url": row[1], "title": row[2], "channel_name": row[3], "tags": row[4], "memo": row[5], "created_at": row[6], "updated_at": row[7]} for row in cur.fetchall()]
+        cur.close()
+        return videos
+    except Exception as e:
+        print(f"Error searching videos: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -80,14 +127,15 @@ def update_video_db(video_id: int, video: Video):
 
     try:
         cur.execute(
-            "UPDATE videos SET url = %s, title = %s, channel_name = %s, tags = %s, memo = %s WHERE id = %s RETURNING id;",
+            "UPDATE videos SET url = %s, title = %s, channel_name = %s, tags = %s, memo = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s RETURNING id, created_at, updated_at;",
             (video.url, title, channel_name, video.tags, video.memo, video_id)
         )
-        updated_id = cur.fetchone()
-        conn.commit()
-        if not updated_id:
+        updated_result = cur.fetchone()
+        if not updated_result:
             raise HTTPException(status_code=404, detail="Video not found")
-        return {"id": video_id, "url": video.url, "title": title, "channel_name": channel_name, "tags": video.tags, "memo": video.memo}
+        updated_id, created_at, updated_at = updated_result
+        conn.commit()
+        return {"id": updated_id, "url": video.url, "title": title, "channel_name": channel_name, "tags": video.tags, "memo": video.memo, "created_at": created_at, "updated_at": updated_at}
     except Exception as e:
         conn.rollback()
         print(f"Error updating video: {e}")

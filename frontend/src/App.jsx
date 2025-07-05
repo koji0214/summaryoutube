@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import VideoForm from './components/VideoForm';
 import VideoList from './components/VideoList';
+import TagMultiSelect from './components/TagMultiSelect';
 
 function App() {
   const [videos, setVideos] = useState([]);
@@ -9,9 +10,22 @@ function App() {
   const [editingVideoId, setEditingVideoId] = useState(null);
   const [currentEditData, setCurrentEditData] = useState({ url: '', tags: [], memo: '' });
   const [showModal, setShowModal] = useState(false); // State for modal visibility
+  const [searchTitle, setSearchTitle] = useState('');
+  const [searchTags, setSearchTags] = useState([]);
+  const [sortBy, setSortBy] = useState('id');
+  const [sortOrder, setSortOrder] = useState('asc');
 
-  const fetchVideos = () => {
-    fetch('/api/videos/')
+  const fetchVideos = (title = searchTitle, tags = searchTags, sort_by = sortBy, sort_order = sortOrder) => {
+    const params = new URLSearchParams();
+    if (title) {
+      params.append('title_query', title);
+    }
+    if (tags.length > 0) {
+      params.append('tags_query', tags.join(','));
+    }
+    params.append('sort_by', sort_by);
+    params.append('sort_order', sort_order);
+    fetch(`/api/videos/?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => setVideos(data))
       .catch((err) => console.error("Error fetching videos:", err));
@@ -25,7 +39,7 @@ function App() {
   };
 
   useEffect(() => {
-    fetchVideos();
+    fetchVideos(); // Initial fetch without search parameters
     fetchTags();
   }, []);
 
@@ -108,6 +122,10 @@ function App() {
     setCurrentEditData(data);
   };
 
+  const handleSearch = () => {
+    fetchVideos(searchTitle, searchTags, sortBy, sortOrder);
+  };
+
   return (
     <>
       <h1>YouTube Video List</h1>
@@ -121,6 +139,40 @@ function App() {
           </div>
         </div>
       )}
+
+      <h2>Search Videos</h2>
+      <div className="search-controls">
+        <input
+          type="text"
+          placeholder="Search by title"
+          value={searchTitle}
+          onChange={(e) => setSearchTitle(e.target.value)}
+        />
+        <TagMultiSelect
+          allTags={allTags}
+          selectedTags={searchTags}
+          onTagChange={setSearchTags}
+        />
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="id">Sort by ID</option>
+          <option value="title">Sort by Title</option>
+          <option value="channel_name">Sort by Channel</option>
+          <option value="created_at">Sort by Created Date</option>
+          <option value="updated_at">Sort by Updated Date</option>
+        </select>
+        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+        <button onClick={handleSearch}>Search</button>
+        <button onClick={() => {
+          setSearchTitle('');
+          setSearchTags([]);
+          setSortBy('id');
+          setSortOrder('asc');
+          fetchVideos('', [], 'id', 'asc');
+        }}>Clear Search</button>
+      </div>
 
       <h2>Videos from Database</h2>
       {videos.length === 0 ? (

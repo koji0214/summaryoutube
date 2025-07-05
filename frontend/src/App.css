@@ -265,3 +265,121 @@
   padding: 0.5rem;
   border-radius: 4px;
 }
+
+.search-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: center;
+  align-items: center;
+}
+
+.search-controls input[type="text"],
+.search-controls select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.search-controls button {
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.search-controls button:hover {
+  background-color: #0056b3;
+}
+
+/* TagMultiSelect Styles */
+.tag-multi-select {
+  position: relative;
+  width: 200px; /* Adjust as needed */
+  font-size: 0.9em;
+}
+
+.selected-tags-display {
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.selected-tag-pill {
+  background-color: #cececf;
+  color: rgb(31, 31, 31);
+  padding: 1px 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.selected-tag-pill button {
+  background: none;
+  border: none;
+  color: rgb(63, 62, 62);
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 3px;
+}
+
+.selected-tag-pill button:hover {
+  background-color: #636464; /* Darker blue, similar to tag background */
+  border-radius: 10%; /* Make it round on hover */
+}
+
+.tag-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid #ccc;
+  border-top: none;
+  background-color: #fff;
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 0 0 4px 4px;
+}
+
+.tag-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  cursor: pointer;
+  color: #333;
+  position: relative; /* For absolute positioning of the checkmark */
+}
+
+.tag-dropdown-item:hover {
+  background-color: #e9e9e9;
+}
+
+.tag-checkbox-indicator {
+  position: absolute;
+  right: 8px; /* Adjust as needed */
+  color: rgb(123, 123, 123); /* Color of the checkmark */
+  font-weight: bold;
+  font-size: 1em;
+  width: 1em; /* Ensure it takes up space */
+  text-align: center;
+}
+
+.tag-dropdown-item input[type="checkbox"] {
+  margin-right: 8px;
+}

@@ -108,6 +108,8 @@ const VideoItem = ({ video, allTags, setAllTags, onUpdateVideo, onDeleteVideo, o
           <a href={video.url} target="_blank" rel="noopener noreferrer">{video.url}</a><br />
           <strong>Tags:</strong> {video.tags || 'N/A'}<br />
           <strong>Memo:</strong> {video.memo || 'N/A'}<br />
+          <strong>Created At:</strong> {new Date(video.created_at).toLocaleString()}<br />
+          <strong>Updated At:</strong> {new Date(video.updated_at).toLocaleString()}<br />
           <div className="actions">
             <button onClick={() => onEditVideo(video)}>Edit</button>
             <button onClick={() => onDeleteVideo(video.id)}>Delete</button>

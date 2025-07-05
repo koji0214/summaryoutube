@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 class Video(BaseModel):
     url: str
@@ -13,6 +14,8 @@ class VideoResponse(BaseModel):
     channel_name: str
     tags: Optional[str] = None
     memo: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         orm_mode = True
