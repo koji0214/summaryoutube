@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from src.models import Video
 from src.database import create_tables
 from src.crud import create_video_db, get_videos_db, update_video_db, delete_video_db, get_all_tags_db, search_videos_db
+from src.seeder import seed_data
 from typing import Optional
 
 app = FastAPI()
@@ -9,6 +10,7 @@ app = FastAPI()
 @app.on_event("startup")
 async def startup_event():
     await create_tables()
+    seed_data()
 
 @app.get("/")
 def read_root():
