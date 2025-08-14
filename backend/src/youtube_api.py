@@ -33,7 +33,8 @@ def get_youtube_video_details(video_id: str):
 
 def get_transcript_from_youtube(video_id: str):
     try:
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['ja', 'en']) # TODO::ここのメソッドの使い方がよくない.こんなメソッドはない
+        api = YouTubeTranscriptApi()
+        transcript_list = api.fetch(video_id, languages=['ja', 'en'])
         transcript = " ".join([item['text'] for item in transcript_list])
         return transcript
     except Exception as e:
