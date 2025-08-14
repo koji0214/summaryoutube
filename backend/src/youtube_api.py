@@ -35,7 +35,7 @@ def get_transcript_from_youtube(video_id: str):
     try:
         api = YouTubeTranscriptApi()
         transcript_list = api.fetch(video_id, languages=['ja', 'en'])
-        transcript = " ".join([item['text'] for item in transcript_list])
+        transcript = " ".join([item['text'] for item in transcript_list.to_raw_data()])
         return transcript
     except Exception as e:
         print(f"Could not retrieve transcript for video {video_id}: {e}")

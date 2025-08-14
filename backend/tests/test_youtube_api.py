@@ -2,6 +2,7 @@ import pytest
 from src.youtube_api import extract_video_id, get_youtube_video_details, get_transcript_from_youtube
 import os
 from unittest.mock import patch
+from youtube_transcript_api import FetchedTranscriptSnippet
 
 # テスト実行時に.envファイルの影響を受けないようにする
 # モジュールレベルで環境変数をクリア
@@ -75,12 +76,29 @@ def test_get_youtube_video_details_no_api_key():
 # Test cases for get_transcript_from_youtube
 @patch('src.youtube_api.YouTubeTranscriptApi')
 def test_get_transcript_from_youtube_success(mock_youtube_api_class):
+    from youtube_transcript_api import FetchedTranscript, FetchedTranscriptSnippet
+    from unittest.mock import Mock
+    
+    # FetchedTranscriptSnippetオブジェクトを作成
+    snippet1 = FetchedTranscriptSnippet("Hello", 0.0, 1.0)
+    snippet2 = FetchedTranscriptSnippet("world", 1.0, 1.0)
+    
+    # 辞書形式でアクセスできるようにモック
+    snippet1.__getitem__ = lambda self, key: {"text": "Hello", "start": 0, "duration": 1}[key]
+    snippet2.__getitem__ = lambda self, key: {"text": "world", "start": 1, "duration": 1}[key]
+    
+    # FetchedTranscriptオブジェクトを作成
+    mock_transcript = FetchedTranscript(
+        snippets=[snippet1, snippet2],
+        video_id="test_video_id",
+        language="English",
+        language_code="en",
+        is_generated=False
+    )
+    
     # モックインスタンスを作成
     mock_api_instance = mock_youtube_api_class.return_value
-    mock_api_instance.fetch.return_value = [
-        {'text': 'Hello', 'start': 0, 'duration': 1},
-        {'text': 'world', 'start': 1, 'duration': 1}
-    ]
+    mock_api_instance.fetch.return_value = mock_transcript
     
     transcript = get_transcript_from_youtube("test_video_id")
     assert transcript == "Hello world"
