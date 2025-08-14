@@ -3,6 +3,11 @@ from src.youtube_api import extract_video_id, get_youtube_video_details, get_tra
 import os
 from unittest.mock import patch
 
+# テスト実行時に.envファイルの影響を受けないようにする
+# モジュールレベルで環境変数をクリア
+if 'YOUTUBE_API_KEY' in os.environ:
+    del os.environ['YOUTUBE_API_KEY']
+
 # Test cases for extract_video_id
 @pytest.mark.parametrize("url, expected_id", [
     ("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "dQw4w9WgXcQ"),
@@ -50,8 +55,14 @@ def test_get_youtube_video_details_no_items(mock_build):
 @patch.dict(os.environ, {'YOUTUBE_API_KEY': 'test_key'})
 def test_get_youtube_video_details_http_error(mock_build):
     from googleapiclient.errors import HttpError
+    from unittest.mock import Mock
+    
+    # より簡単なMockオブジェクトを作成
+    mock_resp = Mock()
+    mock_resp.status = 404
+    
     mock_videos = mock_build.return_value.videos.return_value
-    mock_videos.list.return_value.execute.side_effect = HttpError(resp=type('obj', (object,), {'status': 404})(), content=b'Not Found')
+    mock_videos.list.return_value.execute.side_effect = HttpError(mock_resp, b'Not Found')
     title, channel = get_youtube_video_details("test_video_id")
     assert title is None
     assert channel is None
@@ -62,17 +73,21 @@ def test_get_youtube_video_details_no_api_key():
         get_youtube_video_details("test_video_id")
 
 # Test cases for get_transcript_from_youtube
-@patch('src.youtube_api.YouTubeTranscriptApi.get_transcript')
-def test_get_transcript_from_youtube_success(mock_get_transcript):
-    mock_get_transcript.return_value = [
+@patch('src.youtube_api.YouTubeTranscriptApi')
+def test_get_transcript_from_youtube_success(mock_youtube_api_class):
+    # モックインスタンスを作成
+    mock_api_instance = mock_youtube_api_class.return_value
+    mock_api_instance.fetch.return_value = [
         {'text': 'Hello', 'start': 0, 'duration': 1},
         {'text': 'world', 'start': 1, 'duration': 1}
     ]
+    
     transcript = get_transcript_from_youtube("test_video_id")
     assert transcript == "Hello world"
 
-@patch('src.youtube_api.YouTubeTranscriptApi.get_transcript')
-def test_get_transcript_from_youtube_failure(mock_get_transcript):
-    mock_get_transcript.side_effect = Exception("No transcript available")
+@patch('src.youtube_api.YouTubeTranscriptApi')
+def test_get_transcript_from_youtube_failure(mock_youtube_api_class):
+    mock_api_instance = mock_youtube_api_class.return_value
+    mock_api_instance.fetch.side_effect = Exception("No transcript available")
     transcript = get_transcript_from_youtube("test_video_id")
     assert transcript is None
