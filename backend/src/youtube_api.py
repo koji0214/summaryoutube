@@ -2,6 +2,7 @@ import os
 import re
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from youtube_transcript_api import YouTubeTranscriptApi
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
@@ -30,6 +31,15 @@ def get_youtube_video_details(video_id: str):
     except HttpError as e:
         print(f"An HTTP error {e.resp.status} occurred: {e.content}")
         return None, None
+
+def get_transcript_from_youtube(video_id: str):
+    try:
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['ja', 'en']) # TODO::ここのメソッドの使い方がよくない.こんなメソッドはない
+        transcript = " ".join([item['text'] for item in transcript_list])
+        return transcript
+    except Exception as e:
+        print(f"Could not retrieve transcript for video {video_id}: {e}")
+        return None
 
 def extract_video_id(url: str):
     # YouTubeのURLから動画IDを抽出する正規表現
