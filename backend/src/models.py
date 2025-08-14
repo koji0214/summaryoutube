@@ -6,6 +6,7 @@ class Video(BaseModel):
     url: str
     tags: Optional[str] = None
     memo: Optional[str] = None
+    transcriptionOption: Optional[str] = None
 
 class VideoResponse(BaseModel):
     id: int
@@ -14,6 +15,7 @@ class VideoResponse(BaseModel):
     channel_name: str
     tags: Optional[str] = None
     memo: Optional[str] = None
+    transcript: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
