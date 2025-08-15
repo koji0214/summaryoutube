@@ -17,4 +17,4 @@ COPY . .
 
 
 # 開発サーバーを起動
-CMD ["/usr/local/bin/node", "/app/node_modules/vite/bin/vite.js", "--host", "0.0.0.0"]
+CMD ["sh", "-c", "npm install && npm run dev"]
