@@ -238,3 +238,47 @@ def get_video_by_id_db(video_id: int):
     finally:
         if conn:
             conn.close()
+
+def get_or_create_transcript_db(video_id: int):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # まずDBからtranscriptを取得しようと試みる
+        cur.execute("SELECT transcript, url FROM videos WHERE id = %s;", (video_id,))
+        result = cur.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        transcript, url = result
+        if transcript:
+            return {"transcript": transcript}
+
+        # transcriptがなければ、YouTubeから取得
+        video_id_youtube = extract_video_id(url)
+        if not video_id_youtube:
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL in database")
+
+        new_transcript = get_transcript_from_youtube(video_id_youtube)
+        if not new_transcript:
+            return {"transcript": ""}
+
+        # 取得したtranscriptをDBに保存
+        cur.execute(
+            "UPDATE videos SET transcript = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s;",
+            (new_transcript, video_id)
+        )
+        conn.commit()
+
+        return {"transcript": new_transcript}
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error in get_or_create_transcript_db: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
