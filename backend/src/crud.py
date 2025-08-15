@@ -220,3 +220,21 @@ def get_all_tags_db():
     finally:
         if conn:
             conn.close()
+
+def get_video_by_id_db(video_id: int):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, url, title, channel_name, tags, memo, transcript, created_at, updated_at FROM videos WHERE id = %s;", (video_id,))
+        video = cur.fetchone()
+        cur.close()
+        if not video:
+            raise HTTPException(status_code=404, detail="Video not found")
+        return {"id": video[0], "url": video[1], "title": video[2], "channel_name": video[3], "tags": video[4], "memo": video[5], "transcript": video[6], "created_at": video[7], "updated_at": video[8]}
+    except Exception as e:
+        print(f"Error fetching video: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            conn.close()
