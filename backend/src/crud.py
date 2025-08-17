@@ -220,3 +220,65 @@ def get_all_tags_db():
     finally:
         if conn:
             conn.close()
+
+def get_video_by_id_db(video_id: int):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, url, title, channel_name, tags, memo, transcript, created_at, updated_at FROM videos WHERE id = %s;", (video_id,))
+        video = cur.fetchone()
+        cur.close()
+        if not video:
+            raise HTTPException(status_code=404, detail="Video not found")
+        return {"id": video[0], "url": video[1], "title": video[2], "channel_name": video[3], "tags": video[4], "memo": video[5], "transcript": video[6], "created_at": video[7], "updated_at": video[8]}
+    except Exception as e:
+        print(f"Error fetching video: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            conn.close()
+
+def get_or_create_transcript_db(video_id: int):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # まずDBからtranscriptを取得しようと試みる
+        cur.execute("SELECT transcript, url FROM videos WHERE id = %s;", (video_id,))
+        result = cur.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        transcript, url = result
+        if transcript:
+            return {"transcript": transcript}
+
+        # transcriptがなければ、YouTubeから取得
+        video_id_youtube = extract_video_id(url)
+        if not video_id_youtube:
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL in database")
+
+        new_transcript = get_transcript_from_youtube(video_id_youtube)
+        if not new_transcript:
+            return {"transcript": ""}
+
+        # 取得したtranscriptをDBに保存
+        cur.execute(
+            "UPDATE videos SET transcript = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s;",
+            (new_transcript, video_id)
+        )
+        conn.commit()
+
+        return {"transcript": new_transcript}
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error in get_or_create_transcript_db: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
