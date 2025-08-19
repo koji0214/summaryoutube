@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
-from src.models import Video
+from src.models import Video, VideoResponse
 from src.crud import create_video_db, update_video_db, delete_video_db, search_videos_db, get_video_by_id_db, get_or_create_transcript_db
 from src.youtube_api import extract_video_id
 
 router = APIRouter()
 
-@router.post("/videos/", response_model=Video)
+@router.post("/videos/", response_model=VideoResponse)
 def create_video(video: Video):
     return create_video_db(video)
 
