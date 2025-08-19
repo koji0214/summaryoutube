@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 # Mock for database connection
 @pytest.fixture
 def mock_db_connection():
-    with patch('src.database.get_db_connection') as mock_get_db_conn:
+    with patch('src.crud.get_db_connection') as mock_get_db_conn:
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_get_db_conn.return_value = mock_conn
@@ -18,7 +18,7 @@ def mock_db_connection():
         yield mock_conn, mock_cursor
 
 # Mock for youtube_api functions
-@pytest.pytest.fixture
+@pytest.fixture
 def mock_youtube_api():
     with patch('src.crud.extract_video_id') as mock_extract_video_id, \
          patch('src.crud.get_youtube_video_details') as mock_get_youtube_video_details, \
@@ -130,10 +130,10 @@ def test_get_videos_db_db_error(mock_db_connection):
 
 # Test search_videos_db
 @pytest.mark.parametrize("title_query, tags_query, sort_by, sort_order, expected_sql_part, expected_params", [
-    (None, None, "id", "asc", "ORDER BY id ASC;", ())
-    ( "test", None, "id", "asc", "WHERE title ILIKE %s ORDER BY id ASC;", ("%test%",)),
-    (None, "tag1", "id", "asc", "WHERE string_to_array(tags, ",") @> string_to_array(%s, ",") ORDER BY id ASC;", ("tag1",)),
-    ("test", "tag1", "title", "desc", "WHERE title ILIKE %s AND string_to_array(tags, ",") @> string_to_array(%s, ",") ORDER BY title DESC;", ("%test%", "tag1")),
+    (None, None, "id", "asc", "ORDER BY id ASC;", ()),
+    ("test", None, "id", "asc", "WHERE title ILIKE %s ORDER BY id ASC;", ("%test%",)),
+    (None, "tag1", "id", "asc", "WHERE string_to_array(tags, ',') @> string_to_array(%s, ',') ORDER BY id ASC;", ("tag1",)),
+    ("test", "tag1", "title", "desc", "WHERE title ILIKE %s AND string_to_array(tags, ',') @> string_to_array(%s, ',') ORDER BY title DESC;", ("%test%", "tag1")),
     (None, None, "invalid_col", "invalid_order", "ORDER BY id ASC;", ()), # Test invalid sort
 ])
 def test_search_videos_db_success(mock_db_connection, title_query, tags_query, sort_by, sort_order, expected_sql_part, expected_params):
@@ -245,12 +245,13 @@ def test_update_video_db_db_error(mock_db_connection, mock_youtube_api):
     mock_conn, mock_cursor = mock_db_connection
     mock_extract_video_id, mock_get_youtube_video_details, _ = mock_youtube_api
 
+    # 最初のSELECTは成功し、UPDATEで例外が発生するように設定
     mock_cursor.fetchone.side_effect = [
         ("old_url", "old_title", "old_channel"), # For SELECT
+        Exception("DB update error")  # For UPDATE
     ]
     mock_extract_video_id.return_value = "test_video_id"
     mock_get_youtube_video_details.return_value = ("New Title", "New Channel")
-    mock_cursor.execute.side_effect = Exception("DB update error")
 
     video_data = Video(
         url="https://www.youtube.com/watch?v=new_video_id",
