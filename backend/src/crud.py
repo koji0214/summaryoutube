@@ -63,6 +63,8 @@ def create_video_db(video: Video):
         }
     except Exception as e:
         print(f"--- Debug: Error during database operation: {e} ---")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -80,6 +82,8 @@ def get_videos_db():
         return videos
     except Exception as e:
         print(f"Error fetching videos: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -123,6 +127,8 @@ def search_videos_db(title_query: Optional[str] = None, tags_query: Optional[str
         return videos
     except Exception as e:
         print(f"Error searching videos: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -170,6 +176,9 @@ def update_video_db(video_id: int, video: Video):
         updated_id, created_at, updated_at = updated_result
         conn.commit()
         return {"id": updated_id, "url": video.url, "title": title, "channel_name": channel_name, "tags": video.tags, "memo": video.memo, "created_at": created_at, "updated_at": updated_at}
+    except HTTPException:
+        # Re-raise HTTPException as-is
+        raise
     except Exception as e:
         conn.rollback()
         print(f"Error updating video: {e}")
@@ -190,8 +199,13 @@ def delete_video_db(video_id: int):
         if not deleted_id:
             raise HTTPException(status_code=404, detail="Video not found")
         return {"message": "Video deleted successfully"}
+    except HTTPException:
+        # Re-raise HTTPException as-is
+        raise
     except Exception as e:
         print(f"Error deleting video: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -216,6 +230,8 @@ def get_all_tags_db():
         return unique_tags
     except Exception as e:
         print(f"Error fetching tags: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -232,8 +248,13 @@ def get_video_by_id_db(video_id: int):
         if not video:
             raise HTTPException(status_code=404, detail="Video not found")
         return {"id": video[0], "url": video[1], "title": video[2], "channel_name": video[3], "tags": video[4], "memo": video[5], "transcript": video[6], "created_at": video[7], "updated_at": video[8]}
+    except HTTPException:
+        # Re-raise HTTPException as-is
+        raise
     except Exception as e:
         print(f"Error fetching video: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
