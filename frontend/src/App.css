@@ -383,3 +383,11 @@
 .tag-dropdown-item input[type="checkbox"] {
   margin-right: 8px;
 }
+
+.video-item.video-item-card {
+  cursor: pointer;
+}
+
+.video-item.video-item-card:hover {
+  background-color: #3a3a3a; /* A bit lighter for editing mode */
+}
