@@ -10,4 +10,5 @@ dependencies = [
     "pytest",
     "pytest-mock",
     "ipykernel>=6.30.1",
+    "httpx>=0.28.1",
 ]
