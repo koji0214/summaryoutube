@@ -1,39 +1,75 @@
 from fastapi import HTTPException
 from src.database import get_db_connection
-from src.youtube_api import extract_video_id, get_youtube_video_details
+from src.youtube_api import extract_video_id, get_youtube_video_details, get_transcript_from_youtube
 from src.models import Video
 from typing import Optional
 
 def create_video_db(video: Video):
+    print("--- Debug: Entering create_video_db ---")
+    print(f"Received video data: {video}")
+
     video_id = extract_video_id(video.url)
+    print(f"Extracted video ID: {video_id}")
     if not video_id:
+        print("Error: Invalid YouTube URL")
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
 
+    print("Fetching YouTube video details...")
     title, channel_name = get_youtube_video_details(video_id)
+    print(f"Video details: title='{title}', channel='{channel_name}'")
     if not title or not channel_name:
+        print("Error: Could not retrieve video details.")
         raise HTTPException(status_code=500, detail="Could not retrieve video details from YouTube API.")
+
+    transcript = None
+    print(f"Transcription option: {video.transcriptionOption}")
+    if video.transcriptionOption == 'standard':
+        print("Fetching YouTube transcript...")
+        transcript = get_transcript_from_youtube(video_id)
+        print(f"Transcript result: {'Success (length: ' + str(len(transcript)) + ')' if transcript else 'None'}")
+    elif video.transcriptionOption == 'high_quality':
+        print("High-quality transcription selected (placeholder).")
+        transcript = "High-quality transcription is not yet implemented."
 
     conn = None
     try:
+        print("Connecting to database...")
         conn = get_db_connection()
         cur = conn.cursor()
+        print("Database connection successful. Executing INSERT...")
         cur.execute(
-            "INSERT INTO videos (url, title, channel_name, tags, memo) VALUES (%s, %s, %s, %s, %s) RETURNING id, created_at, updated_at;",
-            (video.url, title, channel_name, video.tags, video.memo)
+            "INSERT INTO videos (url, title, channel_name, tags, memo, transcript) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id, created_at, updated_at;",
+            (video.url, title, channel_name, video.tags, video.memo, transcript)
         )
         result = cur.fetchone()
-        video_id = result[0]
+        print(f"INSERT result: {result}")
+        video_id_db = result[0]
         created_at = result[1]
         updated_at = result[2]
+        print("Committing transaction...")
         conn.commit()
         cur.close()
-        return {"id": video_id, "url": video.url, "title": title, "channel_name": channel_name, "tags": video.tags, "memo": video.memo, "created_at": created_at, "updated_at": updated_at}
+        print("--- Debug: Exiting create_video_db (Success) ---")
+        return {
+            "id": video_id_db, 
+            "url": video.url, 
+            "title": title, 
+            "channel_name": channel_name, 
+            "tags": video.tags, 
+            "memo": video.memo, 
+            "transcript": transcript,
+            "created_at": created_at, 
+            "updated_at": updated_at
+        }
     except Exception as e:
-        print(f"Error inserting video: {e}")
+        print(f"--- Debug: Error during database operation: {e} ---")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
             conn.close()
+            print("Database connection closed.")
 
 def get_videos_db():
     conn = None
@@ -46,6 +82,8 @@ def get_videos_db():
         return videos
     except Exception as e:
         print(f"Error fetching videos: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -89,6 +127,8 @@ def search_videos_db(title_query: Optional[str] = None, tags_query: Optional[str
         return videos
     except Exception as e:
         print(f"Error searching videos: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -136,6 +176,9 @@ def update_video_db(video_id: int, video: Video):
         updated_id, created_at, updated_at = updated_result
         conn.commit()
         return {"id": updated_id, "url": video.url, "title": title, "channel_name": channel_name, "tags": video.tags, "memo": video.memo, "created_at": created_at, "updated_at": updated_at}
+    except HTTPException:
+        # Re-raise HTTPException as-is
+        raise
     except Exception as e:
         conn.rollback()
         print(f"Error updating video: {e}")
@@ -156,8 +199,13 @@ def delete_video_db(video_id: int):
         if not deleted_id:
             raise HTTPException(status_code=404, detail="Video not found")
         return {"message": "Video deleted successfully"}
+    except HTTPException:
+        # Re-raise HTTPException as-is
+        raise
     except Exception as e:
         print(f"Error deleting video: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
@@ -182,7 +230,76 @@ def get_all_tags_db():
         return unique_tags
     except Exception as e:
         print(f"Error fetching tags: {e}")
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if conn:
+            conn.close()
+
+def get_video_by_id_db(video_id: int):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, url, title, channel_name, tags, memo, transcript, created_at, updated_at FROM videos WHERE id = %s;", (video_id,))
+        video = cur.fetchone()
+        cur.close()
+        if not video:
+            raise HTTPException(status_code=404, detail="Video not found")
+        return {"id": video[0], "url": video[1], "title": video[2], "channel_name": video[3], "tags": video[4], "memo": video[5], "transcript": video[6], "created_at": video[7], "updated_at": video[8]}
+    except HTTPException:
+        # Re-raise HTTPException as-is
+        raise
+    except Exception as e:
+        print(f"Error fetching video: {e}")
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            conn.close()
+
+def get_or_create_transcript_db(video_id: int):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # まずDBからtranscriptを取得しようと試みる
+        cur.execute("SELECT transcript, url FROM videos WHERE id = %s;", (video_id,))
+        result = cur.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        transcript, url = result
+        if transcript:
+            return {"transcript": transcript}
+
+        # transcriptがなければ、YouTubeから取得
+        video_id_youtube = extract_video_id(url)
+        if not video_id_youtube:
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL in database")
+
+        new_transcript = get_transcript_from_youtube(video_id_youtube)
+        if not new_transcript:
+            return {"transcript": ""}
+
+        # 取得したtranscriptをDBに保存
+        cur.execute(
+            "UPDATE videos SET transcript = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s;",
+            (new_transcript, video_id)
+        )
+        conn.commit()
+
+        return {"transcript": new_transcript}
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error in get_or_create_transcript_db: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if conn:
+            cur.close()
             conn.close()

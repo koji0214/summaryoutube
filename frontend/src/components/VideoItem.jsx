@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const VideoItem = ({ video, allTags, setAllTags, onUpdateVideo, onDeleteVideo, onEditVideo, isEditing, currentEditData, onCancelEdit, onEditFormChange }) => {
   const extractVideoId = (url) => {
@@ -51,7 +52,7 @@ const VideoItem = ({ video, allTags, setAllTags, onUpdateVideo, onDeleteVideo, o
 
   return (
     <li className={`video-item ${isEditing ? 'editing' : ''}`}>
-      <strong>Title:</strong> {video.title}<br />
+      <strong>Title:</strong> <Link to={`/video/${video.id}`}>{video.title}</Link><br />
       <strong>Channel:</strong> {video.channel_name}<br />
 
       {isEditing ? (

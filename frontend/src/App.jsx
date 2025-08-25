@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import VideoForm from './components/VideoForm';
 import VideoList from './components/VideoList';
 import TagMultiSelect from './components/TagMultiSelect';
+import VideoDetail from './components/VideoDetail';
 
-function App() {
+const MainPage = () => {
   const [videos, setVideos] = useState([]);
   const [allTags, setAllTags] = useState([]);
   const [editingVideoId, setEditingVideoId] = useState(null);
   const [currentEditData, setCurrentEditData] = useState({ url: '', tags: [], memo: '' });
-  const [showModal, setShowModal] = useState(false); // State for modal visibility
+  const [showModal, setShowModal] = useState(false);
   const [searchTitle, setSearchTitle] = useState('');
   const [searchTags, setSearchTags] = useState([]);
   const [sortBy, setSortBy] = useState('id');
@@ -39,7 +41,7 @@ function App() {
   };
 
   useEffect(() => {
-    fetchVideos(); // Initial fetch without search parameters
+    fetchVideos();
     fetchTags();
   }, []);
 
@@ -55,7 +57,7 @@ function App() {
       if (response.ok) {
         fetchVideos();
         fetchTags();
-        setShowModal(false); // Close modal on successful add
+        setShowModal(false);
       } else {
         console.error("Failed to add video");
       }
@@ -192,6 +194,18 @@ function App() {
         />
       )}
     </>
+  );
+}
+
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/video/:id" element={<VideoDetail />} />
+      </Routes>
+    </Router>
   );
 }
 

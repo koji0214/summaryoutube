@@ -20,6 +20,7 @@ async def create_tables():
                 channel_name VARCHAR(255) NOT NULL,
                 tags TEXT,
                 memo TEXT,
+                transcript TEXT,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );

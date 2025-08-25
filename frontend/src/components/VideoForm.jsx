@@ -6,12 +6,13 @@ const VideoForm = ({ onAddVideo, allTags, setAllTags, onCancel }) => {
   const [memo, setMemo] = useState('');
   const [newTag, setNewTag] = useState('');
   const [isHovering, setIsHovering] = useState(false);
+  const [transcriptionOption, setTranscriptionOption] = useState('standard');
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     setIsHovering(true);
     setTimeout(() => setIsHovering(false), 500); // Remove hover effect after 0.5 seconds
-    await onAddVideo({ url, tags: tags.join(','), memo });
+    await onAddVideo({ url, tags: tags.join(','), memo, transcriptionOption });
     setUrl('');
     setTags([]);
     setMemo('');
@@ -83,6 +84,29 @@ const VideoForm = ({ onAddVideo, allTags, setAllTags, onCancel }) => {
             placeholder="Or add a new tag"
             style={{ marginLeft: '10px' }}
           />
+        </div>
+      </div>
+      <div>
+        <label>Transcription Option:</label>
+        <div className="transcription-options">
+          <label>
+            <input
+              type="radio"
+              value="standard"
+              checked={transcriptionOption === 'standard'}
+              onChange={(e) => setTranscriptionOption(e.target.value)}
+            />
+            Standard (Free)
+          </label>
+          <label style={{ marginLeft: '10px' }}>
+            <input
+              type="radio"
+              value="high_quality"
+              checked={transcriptionOption === 'high_quality'}
+              onChange={(e) => setTranscriptionOption(e.target.value)}
+            />
+            High-Quality (Paid)
+          </label>
         </div>
       </div>
       <div>
