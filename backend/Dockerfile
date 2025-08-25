@@ -1,6 +1,9 @@
 # Pythonの公式イメージをベースにする
 FROM python:3.12-slim
 
+# ffmpegをインストール
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
 # ghcr.ioからuvの最新バイナリを一時的なステージとしてコピー
 COPY --from=ghcr.io/astral-sh/uv:0.7.16 /uv /uvx /bin/
 
