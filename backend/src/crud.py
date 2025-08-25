@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from src.database import get_db_connection
-from src.youtube_api import extract_video_id, get_youtube_video_details, get_transcript_from_youtube
+from src.youtube_api import extract_video_id, get_youtube_video_details, get_transcript_from_youtube, get_high_quality_transcript
 from src.models import Video
 from typing import Optional
 
@@ -28,8 +28,9 @@ def create_video_db(video: Video):
         transcript = get_transcript_from_youtube(video_id)
         print(f"Transcript result: {'Success (length: ' + str(len(transcript)) + ')' if transcript else 'None'}")
     elif video.transcriptionOption == 'high_quality':
-        print("High-quality transcription selected (placeholder).")
-        transcript = "High-quality transcription is not yet implemented."
+        print("Fetching high-quality YouTube transcript...")
+        transcript = get_high_quality_transcript(video_id)
+        print(f"Transcript result: {'Success (length: ' + str(len(transcript)) + ')' if transcript else 'None'}")
 
     conn = None
     try:
