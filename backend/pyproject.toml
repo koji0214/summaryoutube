@@ -13,4 +13,5 @@ dependencies = [
     "httpx>=0.28.1",
     "yt-dlp>=2025.8.22",
     "google-cloud-speech>=2.33.0",
+    "google-cloud-storage>=2.18.0",
 ]
