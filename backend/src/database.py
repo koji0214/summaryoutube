@@ -1,35 +1,28 @@
-import psycopg2
 import os
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@db:5432/mydatabase")
 
-def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-async def create_tables():
-    conn = None
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS videos (
-                id SERIAL PRIMARY KEY,
-                url TEXT NOT NULL,
-                title VARCHAR(255) NOT NULL,
-                channel_name VARCHAR(255) NOT NULL,
-                tags TEXT,
-                memo TEXT,
-                transcript TEXT,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-        conn.commit()
-        cur.close()
-        print("Database table 'videos' ensured.")
-    except Exception as e:
-        print(f"Error during database startup: {e}")
+        yield db
     finally:
-        if conn:
-            conn.close()
+        db.close()
+
+def create_tables():
+    # Note: This is for development. For production, use Alembic migrations.
+    try:
+        print("Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created successfully.")
+    except Exception as e:
+        print(f"Error creating database tables: {e}")
+
