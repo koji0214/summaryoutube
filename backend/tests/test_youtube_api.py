@@ -1,7 +1,7 @@
 import pytest
-from src.youtube_api import extract_video_id, get_youtube_video_details, get_transcript_from_youtube
+from src.youtube_api import extract_video_id, get_youtube_video_details, get_transcript_from_youtube, get_high_quality_transcript
 import os
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock, mock_open
 from youtube_transcript_api import FetchedTranscriptSnippet
 
 # テスト実行時に.envファイルの影響を受けないようにする
@@ -109,3 +109,49 @@ def test_get_transcript_from_youtube_failure(mock_youtube_api_class):
     mock_api_instance.fetch.side_effect = Exception("No transcript available")
     transcript = get_transcript_from_youtube("test_video_id")
     assert transcript is None
+
+# Test cases for get_high_quality_transcript
+@patch('src.youtube_api.shutil.rmtree')
+@patch('src.youtube_api.tempfile.mkdtemp')
+@patch('src.youtube_api.speech.SpeechClient')
+@patch('src.youtube_api.yt_dlp.YoutubeDL')
+@patch('src.youtube_api.os.path.exists')
+@patch('builtins.open', new_callable=mock_open, read_data=b'fake_audio_data')
+def test_get_high_quality_transcript_success(
+    mock_file_open,
+    mock_path_exists,
+    mock_youtube_dl,
+    mock_speech_client,
+    mock_mkdtemp,
+    mock_rmtree
+):
+    # Arrange
+    mock_path_exists.return_value = True
+    mock_mkdtemp.return_value = '/fake/temp/dir'
+    
+    # speech.SpeechClient().long_running_recognize().result()
+    mock_result = MagicMock()
+    mock_result.alternatives = [MagicMock()]
+    mock_result.alternatives[0].transcript = "This is a high quality transcript."
+    
+    mock_operation = MagicMock()
+    mock_operation.result.return_value = MagicMock(results=[mock_result])
+    
+    mock_speech_client.return_value.long_running_recognize.return_value = mock_operation
+
+    # Act
+    transcript = get_high_quality_transcript('fake_video_id')
+
+    # Assert
+    assert transcript == "This is a high quality transcript."
+    
+    # Check if mocks were called
+    mock_mkdtemp.assert_called_once()
+    mock_youtube_dl.assert_called_once()
+    mock_speech_client.assert_called_once()
+    
+    # Check that the audio file was opened
+    mock_file_open.assert_called_once_with('/fake/temp/dir/fake_video_id.wav', 'rb')
+    
+    # Check if cleanup was called
+    mock_rmtree.assert_called_once_with('/fake/temp/dir')

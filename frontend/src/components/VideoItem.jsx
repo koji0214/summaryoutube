@@ -1,7 +1,40 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
+const StatusBadge = ({ status }) => {
+  if (!status || status === 'completed') return null;
+
+  const badgeStyle = {
+    marginLeft: '10px',
+    padding: '2px 8px',
+    borderRadius: '12px',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: '0.8em',
+  };
+
+  let style = {};
+  let text = '';
+
+  switch (status) {
+    case 'processing':
+      style = { ...badgeStyle, backgroundColor: '#f0ad4e' };
+      text = 'Processing...';
+      break;
+    case 'failed':
+      style = { ...badgeStyle, backgroundColor: '#d9534f' };
+      text = 'Failed';
+      break;
+    default:
+      return null;
+  }
+
+  return <span style={style}>{text}</span>;
+};
 
 const VideoItem = ({ video, allTags, setAllTags, onUpdateVideo, onDeleteVideo, onEditVideo, isEditing, currentEditData, onCancelEdit, onEditFormChange }) => {
+  const navigate = useNavigate();
+
   const extractVideoId = (url) => {
     const patterns = [
       /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/,
@@ -50,9 +83,22 @@ const VideoItem = ({ video, allTags, setAllTags, onUpdateVideo, onDeleteVideo, o
     onEditFormChange({ ...currentEditData, tags: currentEditData.tags.filter(tag => tag !== tagToRemove) });
   };
 
+  const handleCardClick = (e) => {
+    if (isEditing) return;
+
+    const interactiveElements = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA', 'IFRAME'];
+    if (interactiveElements.includes(e.target.tagName) || e.target.closest('.actions, a')) {
+      return;
+    }
+    navigate(`/video/${video.id}`);
+  };
+
   return (
-    <li className={`video-item ${isEditing ? 'editing' : ''}`}>
-      <strong>Title:</strong> <Link to={`/video/${video.id}`}>{video.title}</Link><br />
+    <li
+      className={`video-item ${isEditing ? 'editing' : 'video-item-card'}`}
+      onClick={handleCardClick}
+    >
+      <strong>Title:</strong> {video.title} <StatusBadge status={video.status} /><br />
       <strong>Channel:</strong> {video.channel_name}<br />
 
       {isEditing ? (

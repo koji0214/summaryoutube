@@ -1,49 +1,98 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+
+const StatusBadge = ({ status }) => {
+  if (!status || status === 'completed') return null;
+
+  const badgeStyle = {
+    marginLeft: '10px',
+    padding: '2px 8px',
+    borderRadius: '12px',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: '0.8em',
+  };
+
+  let style = {};
+  let text = '';
+
+  switch (status) {
+    case 'processing':
+      style = { ...badgeStyle, backgroundColor: '#f0ad4e' };
+      text = 'Processing...';
+      break;
+    case 'failed':
+      style = { ...badgeStyle, backgroundColor: '#d9534f' };
+      text = 'Failed';
+      break;
+    default:
+      return null;
+  }
+
+  return <span style={style}>{text}</span>;
+};
 
 const VideoDetail = () => {
   const { id } = useParams();
   const [video, setVideo] = useState(null);
-  const [transcript, setTranscript] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchVideo = async () => {
-      try {
-        const response = await fetch(`/api/videos/${id}`);
-        if (!response.ok) {
-          throw new Error('Video not found');
-        }
-        const data = await response.json();
-        setVideo(data);
-      } catch (err) {
-        setError(err.message);
-      }
-    };
+  // Ref to hold the interval ID
+  const pollingInterval = useRef(null);
 
-    const fetchTranscript = async () => {
-      try {
-        const response = await fetch(`/api/videos/${id}/transcript`);
-        if (!response.ok) {
-          throw new Error('Transcript not found');
-        }
-        const data = await response.json();
-        setTranscript(data.transcript);
-      } catch (err) {
-        // Transcript might not exist, so we don't treat it as a critical error
-        console.error("Error fetching transcript:", err);
-        setTranscript('No transcript available.');
+  const fetchVideo = async () => {
+    try {
+      const response = await fetch(`/api/videos/${id}`);
+      if (!response.ok) {
+        throw new Error('Video not found');
       }
-    };
+      const data = await response.json();
+      setVideo(data);
 
-    const fetchAll = async () => {
-      setLoading(true);
-      await Promise.all([fetchVideo(), fetchTranscript()]);
-      setLoading(false);
+      // If the process is finished, stop polling
+      if (data.status === 'completed' || data.status === 'failed') {
+        if (pollingInterval.current) {
+          clearInterval(pollingInterval.current);
+          pollingInterval.current = null;
+        }
+      }
+      return data; // Return data for initial setup
+    } catch (err) {
+      setError(err.message);
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+        pollingInterval.current = null;
+      }
+      return null;
     }
+  };
 
-    fetchAll();
+  useEffect(() => {
+    const startPolling = (videoData) => {
+      if (videoData && videoData.status === 'processing' && !pollingInterval.current) {
+        pollingInterval.current = setInterval(() => {
+          console.log('Polling for video status...');
+          fetchVideo();
+        }, 5000); // Poll every 5 seconds
+      }
+    };
+
+    const initialFetch = async () => {
+      setLoading(true);
+      const videoData = await fetchVideo();
+      setLoading(false);
+      startPolling(videoData);
+    };
+
+    initialFetch();
+
+    // Cleanup function to clear interval when component unmounts or id changes
+    return () => {
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+      }
+    };
   }, [id]);
 
   if (loading) {
@@ -58,10 +107,20 @@ const VideoDetail = () => {
     return <div>Video not found.</div>;
   }
 
+  const getTranscriptText = () => {
+    if (video.status === 'processing') {
+      return 'Transcript is being generated...';
+    }
+    if (video.status === 'failed') {
+      return 'Transcript generation failed.';
+    }
+    return video.transcript || 'No transcript available.';
+  }
+
   return (
     <div>
       <Link to="/">Back to Video List</Link>
-      <h1>{video.title}</h1>
+      <h1>{video.title} <StatusBadge status={video.status} /></h1>
       <p><strong>Channel:</strong> {video.channel_name}</p>
       <p><strong>URL:</strong> <a href={video.url} target="_blank" rel="noopener noreferrer">{video.url}</a></p>
       <p><strong>Memo:</strong> {video.memo}</p>
@@ -69,7 +128,7 @@ const VideoDetail = () => {
       
       <h2>Transcript</h2>
       <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-        {transcript}
+        {getTranscriptText()}
       </pre>
     </div>
   );
