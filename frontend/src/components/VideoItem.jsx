@@ -1,6 +1,37 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const StatusBadge = ({ status }) => {
+  if (!status || status === 'completed') return null;
+
+  const badgeStyle = {
+    marginLeft: '10px',
+    padding: '2px 8px',
+    borderRadius: '12px',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: '0.8em',
+  };
+
+  let style = {};
+  let text = '';
+
+  switch (status) {
+    case 'processing':
+      style = { ...badgeStyle, backgroundColor: '#f0ad4e' };
+      text = 'Processing...';
+      break;
+    case 'failed':
+      style = { ...badgeStyle, backgroundColor: '#d9534f' };
+      text = 'Failed';
+      break;
+    default:
+      return null;
+  }
+
+  return <span style={style}>{text}</span>;
+};
+
 const VideoItem = ({ video, allTags, setAllTags, onUpdateVideo, onDeleteVideo, onEditVideo, isEditing, currentEditData, onCancelEdit, onEditFormChange }) => {
   const navigate = useNavigate();
 
@@ -67,7 +98,7 @@ const VideoItem = ({ video, allTags, setAllTags, onUpdateVideo, onDeleteVideo, o
       className={`video-item ${isEditing ? 'editing' : 'video-item-card'}`}
       onClick={handleCardClick}
     >
-      <strong>Title:</strong> {video.title}<br />
+      <strong>Title:</strong> {video.title} <StatusBadge status={video.status} /><br />
       <strong>Channel:</strong> {video.channel_name}<br />
 
       {isEditing ? (

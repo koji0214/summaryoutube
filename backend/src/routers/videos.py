@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -8,9 +8,14 @@ from src.database import get_db
 router = APIRouter()
 
 @router.post("/videos/", response_model=models.VideoSchema)
-def create_video(video: models.VideoCreate, db: Session = Depends(get_db)):
-    # Note: In the next step, we will make this asynchronous.
-    return crud.create_video(db=db, video=video)
+def create_video(video: models.VideoCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    db_video = crud.create_video(db=db, video=video)
+    
+    # If high-quality transcription is requested, run it in the background
+    if db_video.status == 'processing':
+        background_tasks.add_task(crud.run_high_quality_transcription, db_video.id)
+        
+    return db_video
 
 @router.get("/videos/", response_model=List[models.VideoSchema])
 def read_videos(
@@ -43,6 +48,6 @@ def delete_video(video_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Video not found")
     return {"message": "Video deleted successfully"}
 
-@router.get("/videos/{video_id}/transcript")
+@router.get("/videos/{video_id}/transcript", response_model=dict)
 def read_transcript(video_id: int, db: Session = Depends(get_db)):
     return crud.get_or_create_transcript(db, video_id=video_id)
