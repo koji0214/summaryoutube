@@ -13,6 +13,7 @@ services:
       DATABASE_URL: postgresql://user:password@db:5432/mydatabase
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
       GCS_SPEECH_BUCKET: ${GCS_SPEECH_BUCKET}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
 
   frontend:
     build: ./frontend
