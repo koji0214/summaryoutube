@@ -13,8 +13,8 @@ app.include_router(videos.router, prefix=API_PREFIX)
 app.include_router(tags.router, prefix=API_PREFIX)
 
 @app.on_event("startup")
-async def startup_event():
-    await create_tables()
+def startup_event():
+    create_tables()
     seed_data()
 
 @app.get("/")
